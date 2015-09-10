@@ -25,24 +25,24 @@ public class TopTracksActivity extends AppCompatActivity {
         // Show the Up button in the action bar.
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
-        // savedInstanceState is non-null when there is fragment state
+        // savedInstanceState is non-null when there is topTracksActivityFragment state
         // saved from previous configurations of this activity
         // (e.g. when rotating the screen from portrait to landscape).
-        // In this case, the fragment will automatically be re-added
+        // In this case, the topTracksActivityFragment will automatically be re-added
         // to its container so we don't need to manually add it.
         // For more information, see the Fragments API guide at:
         //
         // http://developer.android.com/guide/components/fragments.html
         //
         if (savedInstanceState == null) {
-            // Create the detail fragment and add it to the activity
-            // using a fragment transaction.
+            // Create the detail topTracksActivityFragment and add it to the activity
+            // using a topTracksActivityFragment transaction.
             Bundle arguments = new Bundle();
-            arguments.putString(TopTracksActivityFragment.ARG_ITEM_ID,
-                    getIntent().getStringExtra(TopTracksActivityFragment.ARG_ITEM_ID));
+            arguments.putString(TopTracksActivityFragment.ARTIST_ID,
+                    getIntent().getStringExtra(TopTracksActivityFragment.ARTIST_ID));
             TopTracksActivityFragment fragment = new TopTracksActivityFragment();
             fragment.setArguments(arguments);
-            getSupportFragmentManager().beginTransaction()
+            getFragmentManager().beginTransaction()
                     .add(R.id.frame_top_tracks, fragment)
                     .commit();
         }

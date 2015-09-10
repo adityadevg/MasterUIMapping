@@ -1,10 +1,10 @@
 package com.example.adityadev.masteruimapping;
 
+import android.app.Fragment;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Parcelable;
-import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -13,10 +13,9 @@ import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import com.example.adityadev.masteruimapping.artistsmodel.Artist;
 import com.example.adityadev.masteruimapping.toptracks.Tracks;
 import com.example.adityadev.masteruimapping.toptracks.TracksArrayAdapter;
-import com.example.adityadev.masteruimapping.MediaPlayerActivity;
-import com.example.adityadev.masteruimapping.TopTracksActivity;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -29,14 +28,15 @@ import retrofit.RetrofitError;
 
 
 /**
- * A placeholder fragment containing a simple view.
+ * A placeholder topTracksActivityFragment containing a simple view.
  */
 public class TopTracksActivityFragment extends Fragment {
     /**
-     * The fragment argument representing the item ID that this fragment
+     * The topTracksActivityFragment argument representing the item ID that this topTracksActivityFragment
      * represents.
      */
-    public static final String ARG_ITEM_ID = "item_id";
+    public static final String ARTIST_ID = "artist_id";
+    public static final String TRACK_ID = "track_id";
 
     private TracksArrayAdapter tracksArrayAdapter;
     private List<Tracks> listOfTracks;
@@ -57,6 +57,27 @@ public class TopTracksActivityFragment extends Fragment {
         super.onSaveInstanceState(bundle);
     }
 
+    /**
+     * A callback interface that all activities containing this fragment must
+     * implement. This mechanism allows activities to be notified of item
+     * selections.
+     */
+    public interface topTracksCallbacksInterface {
+        /**
+         * Callback for when an item has been selected.
+         */
+        public void onTopTrackSelected(Tracks selectedTrack);
+    }
+
+    /**
+     * A dummy implementation of the {@link topTracksCallbacksInterface} interface that does
+     * nothing. Used only when this fragment is not attached to an activity.
+     */
+    private static topTracksCallbacksInterface sDummyArtistCallbacksInterface = new topTracksCallbacksInterface() {
+        @Override
+        public void onTopTrackSelected(Tracks selectedTrack) {
+        }
+    };
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -67,9 +88,16 @@ public class TopTracksActivityFragment extends Fragment {
             Intent intent = getActivity().getIntent();
             artistId = intent.getStringExtra(Intent.EXTRA_TEXT);
             artistName = intent.getStringExtra(getString(R.string.artist_name_key));
-            new FetchTracksTask().execute(artistId);
         } else {
             listOfTracks = savedInstanceState.getParcelableArrayList(getString(R.string.track_parcel_key));
+        }
+        if(null != getArguments()){
+            Artist selectedArtist = getArguments().getParcelable(TopTracksActivityFragment.ARTIST_ID);
+            artistId = selectedArtist.getArtistID();
+            artistName = selectedArtist.getArtistName();
+        }
+        if(null != artistId){
+            new FetchTracksTask().execute(artistId);
         }
     }
 
@@ -163,11 +191,10 @@ public class TopTracksActivityFragment extends Fragment {
 
         @Override
         protected void onPostExecute(List<Tracks> tracksResult) {
-            if (null != tracksResult) {
-                if (tracksResult.isEmpty())
-                    Toast.makeText(getActivity(), getString(R.string.no_results), (Toast.LENGTH_LONG)).show();
-                else
-                    tracksArrayAdapter.addAll(tracksResult);
+            if (null == tracksResult || tracksResult.isEmpty()){
+                    Toast.makeText(getActivity(), getString(R.string.no_tracks_found), (Toast.LENGTH_LONG)).show();
+            } else{
+                tracksArrayAdapter.addAll(tracksResult);
             }
         }
     }

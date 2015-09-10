@@ -1,7 +1,6 @@
 <resources>
     <string name="app_name">Spotify Streamer</string>
     <string name="title_activity_main_artist">List of Artists</string>
-    <string name="no_results">No Results</string>
     <string name="title_activity_top_tracks">Top Tracks</string>
     <string name="artist_id_key">Artist ID Key</string>
     <string name="artist_name_key">Artist Name Key</string>
@@ -40,5 +39,8 @@
     <string name="no_song_playing">No Song Playing</string>
     <string name="now_playing">Now Playing</string>
     <string name="track_parcel_key">Track Parcel Key</string>
+    <string name="no_artists_found">No Artists Found</string>
+    <string name="activity_must_implement_fragments_callbacks">Activity must implement fragment\'s callbacks</string>
+    <string name="no_tracks_found">No Tracks Found</string>
 
 </resources>

@@ -17,7 +17,7 @@
     -->
 
     <fragment
-        android:id="@android:id/list"
+        android:id="@+id/fragment_artist_list"
         android:name="com.example.adityadev.masteruimapping.MainArtistActivityFragment"
         android:layout_width="0dp"
         android:layout_height="match_parent"
