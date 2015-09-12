@@ -15,14 +15,13 @@ import android.support.v7.app.NotificationCompat;
 import android.util.Log;
 import android.widget.RemoteViews;
 
-import com.adityadevg.spotifystreamer.toptracks.Tracks;
+import com.example.adityadev.masteruimapping.toptracks.Tracks;
 import com.squareup.picasso.Picasso;
 
 import java.io.IOException;
 import java.util.List;
 
 public class MediaService extends Service implements MediaPlayer.OnPreparedListener, MediaPlayer.OnErrorListener, MediaPlayer.OnCompletionListener {
-    public static final String ACTION_PLAY = "com.example.action.PLAY";
     private static final String LOG_TAG = MediaService.class.getSimpleName();
     private static final int NOTIFICATION_ID = 7;
 
@@ -115,7 +114,7 @@ public class MediaService extends Service implements MediaPlayer.OnPreparedListe
         PendingIntent pendingNextListIntent = PendingIntent.getService(this, 0, nextIntent, 0);
 
 
-        if (null != baseIntent && baseIntent.getAction().equals(ACTION_PLAY)) {
+        if (null != baseIntent && baseIntent.getAction().equals(getString(R.string.action_play))) {
 
             tracksList = baseIntent.getParcelableArrayListExtra(getString(R.string.track_list_key));
             position = baseIntent.getIntExtra(getString(R.string.track_position_key), -1);
@@ -130,7 +129,7 @@ public class MediaService extends Service implements MediaPlayer.OnPreparedListe
                 Log.d(LOG_TAG, "Empty current track");
             }
             initSpotifyPlayer();
-            if (!musicUrl.isEmpty()) {
+            if (null != musicUrl && !musicUrl.isEmpty()) {
                 if (spotifyPlayer.isPlaying()) {
                     spotifyPlayer.stop();
                 }

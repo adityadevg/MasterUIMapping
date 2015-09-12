@@ -25,22 +25,24 @@
     <string name="country_code_pref_key">Country Code Preference Key</string>
     <string name="action_map">Map Location</string>
     <string name="notification">Notification</string>
-    <string name="ACTION_PREV">ACTION_PREV</string>
-    <string name="ACTION_PLAY_PAUSE">ACTION_PLAY_PAUSE</string>
+    <string name="ACTION_PREV">Action Previous</string>
+    <string name="ACTION_PLAY_PAUSE">Action Play Pause</string>
     <string name="ACTION_NEXT">Action Next</string>
     <string name="elapsed_time">elapsed time</string>
     <string name="ACTION_SEEKBAR_POS_CHANGED">ACTION_SEEKBAR_POS_CHANGED</string>
     <string name="Seekbar_Current_Position">Seekbar Current Position</string>
     <string name="ACTION_SEEKBAR_PROGRESS">Action Seekbar Progress</string>
     <string name="ACTION_NOW_PLAYING">Now Playing</string>
-    <string name="tracklist_parcel_key">track list parcel key</string>
     <string name="track_number_key">track number key</string>
     <string name="current_track_key">current track key</string>
     <string name="no_song_playing">No Song Playing</string>
     <string name="now_playing">Now Playing</string>
-    <string name="track_parcel_key">Track Parcel Key</string>
     <string name="no_artists_found">No Artists Found</string>
     <string name="activity_must_implement_fragments_callbacks">Activity must implement fragment\'s callbacks</string>
     <string name="no_tracks_found">No Tracks Found</string>
-
+    <!-- The topTracksActivityFragment argument representing the item ID that this topTracksActivityFragment
+    represents.-->
+    <string name="artist_id">Artist ID</string>
+    <string name="action_play">com.example.action.PLAY</string>
+    <string name="fragment_media_player">Fragment Media Player</string>
 </resources>

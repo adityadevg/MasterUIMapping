@@ -13,7 +13,7 @@
         android:id="@+id/list_item_tracks_imageview"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:padding="@dimen/abc_action_bar_default_padding_material">
+        android:padding="@dimen/four_dp">
     </ImageView>
 
     <LinearLayout
@@ -30,7 +30,7 @@
             android:singleLine="true"
             android:gravity="center_vertical"
             android:minHeight="?android:attr/listPreferredItemHeight"
-            android:padding="@dimen/abc_action_bar_default_padding_material">
+            android:padding="@dimen/four_dp">
         </TextView>
 
         <TextView
@@ -41,7 +41,7 @@
             android:singleLine="true"
             android:gravity="center_vertical"
             android:minHeight="?android:attr/listPreferredItemHeight"
-            android:padding="@dimen/abc_action_bar_default_padding_material">
+            android:padding="@dimen/four_dp">
         </TextView>
     </LinearLayout>
 </LinearLayout>

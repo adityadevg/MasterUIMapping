@@ -1,11 +1,18 @@
 package com.example.adityadev.masteruimapping;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.v4.app.FragmentActivity;
+import android.os.Parcelable;
+import android.support.v4.app.FragmentManager;
+import android.support.v7.app.AppCompatActivity;
 
 import com.example.adityadev.masteruimapping.artistsmodel.Artist;
 import com.example.adityadev.masteruimapping.toptracks.Tracks;
+
+import java.util.ArrayList;
+import java.util.List;
 
 
 /**
@@ -21,9 +28,10 @@ import com.example.adityadev.masteruimapping.toptracks.Tracks;
  * (if present) is a {@link TopTracksActivityFragment}.
  * <p/>
  */
-public class MainArtistActivity extends FragmentActivity
-        implements MainArtistActivityFragment.artistCallbacksInterface,
-        TopTracksActivityFragment.topTracksCallbacksInterface {
+public class MainArtistActivity extends AppCompatActivity
+        implements MainArtistActivityFragment.ArtistCallbacksInterface,
+        TopTracksActivityFragment.TopTracksCallbacksInterface,
+        MediaPlayerActivityFragment.MediaPlayerCallbacksInterface {
 
     /**
      * Whether or not the activity is in two-pane mode, i.e. running on a tablet
@@ -31,11 +39,21 @@ public class MainArtistActivity extends FragmentActivity
      */
     protected boolean mTwoPane;
     protected static Bundle arguments;
+    private FragmentManager fragmentManager = getSupportFragmentManager();
+    private BroadcastReceiver broadcastReceiver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main_artist);
+        broadcastReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                if(intent.getAction().equals(getString(R.string.ACTION_NOW_PLAYING))){
+
+                }
+            }
+        }
 
         if (null != findViewById(R.id.frame_top_tracks)) {
             // The detail container view will be present only in the
@@ -45,12 +63,13 @@ public class MainArtistActivity extends FragmentActivity
             mTwoPane = true;
 
         }
+        getSupportActionBar().setTitle(getString(R.string.app_name));
 
         // TODO: If exposing deep links into your app, handle intents here.
     }
 
     /**
-     * Callback method from {@link MainArtistActivityFragment.artistCallbacksInterface}
+     * Callback method from {@link MainArtistActivityFragment.ArtistCallbacksInterface}
      * indicating that the item with the given ID was selected.
      */
     public void onArtistSelected(Artist selectedArtist) {
@@ -59,7 +78,7 @@ public class MainArtistActivity extends FragmentActivity
             // adding or replacing the detail topTracksActivityFragment using a
             // topTracksActivityFragment transaction.
             Bundle arguments = new Bundle();
-            arguments.putParcelable(TopTracksActivityFragment.ARTIST_ID, selectedArtist);
+            arguments.putParcelable(getString(R.string.artist_id), selectedArtist);
             TopTracksActivityFragment topTracksActivityFragment = new TopTracksActivityFragment();
             topTracksActivityFragment.setArguments(arguments);
             getFragmentManager().beginTransaction()
@@ -70,31 +89,37 @@ public class MainArtistActivity extends FragmentActivity
             // In single-pane mode, simply start the detail activity
             // for the selected item ID.
             Intent detailIntent = new Intent(this, TopTracksActivity.class);
-            detailIntent.putExtra(TopTracksActivityFragment.ARTIST_ID, selectedArtist);
+            detailIntent.putExtra(getString(R.string.artist_id), selectedArtist);
             startActivity(detailIntent);
         }
     }
 
     @Override
-    public void onTopTrackSelected(Tracks selectedTrack) {
+    public void onTopTrackSelected(List<Tracks> listOfTracksForPlayer, int selectedTrackPosition) {
         if (mTwoPane) {
             // In two-pane mode, show the detail view in this activity by
             // adding or replacing the detail topTracksActivityFragment using a
             // topTracksActivityFragment transaction.
-            Bundle arguments = new Bundle();
-            arguments.putParcelable(TopTracksActivityFragment.TRACK_ID, selectedTrack);
-            MediaPlayerActivity mediaPlayerActivity = new MediaPlayerActivity();
-            //mediaPlayerActivity.setArguments(arguments);
-//            getFragmentManager().beginTransaction()
-//                    .replace(R.id.frame_top_tracks, mediaPlayerActivity)
-//                    .commit();
+            MediaPlayerActivityFragment mediaPlayerActivityFragment = new MediaPlayerActivityFragment();
+            mediaPlayerActivityFragment.show(fragmentManager, getString(R.string.fragment_media_player));
 
         } else {
             // In single-pane mode, simply start the detail activity
             // for the selected item ID.
-            Intent detailIntent = new Intent(this, MediaPlayerActivity.class);
-            detailIntent.putExtra(TopTracksActivityFragment.TRACK_ID, selectedTrack);
-            startActivity(detailIntent);
+            Intent mediaPlayerIntent = new Intent(this, MediaPlayerActivity.class);
+            mediaPlayerIntent.putParcelableArrayListExtra(getString(R.string.track_list_key), (ArrayList<? extends Parcelable>) listOfTracksForPlayer);
+            mediaPlayerIntent.putExtra(getString(R.string.track_position_key), selectedTrackPosition);
+            startActivity(mediaPlayerIntent);
         }
+    }
+
+    @Override
+    public void onSelectedTrackStarted(String externalURL) {
+
+    }
+
+    @Override
+    public void onSelectedTrackCompleted() {
+
     }
 }

@@ -1,10 +1,16 @@
 package com.example.adityadev.masteruimapping;
 
+import android.os.Parcelable;
 import android.support.v7.app.AppCompatActivity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.NavUtils;
 import android.view.MenuItem;
+
+import com.example.adityadev.masteruimapping.toptracks.Tracks;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * An activity representing a single Artist detail screen. This
@@ -15,7 +21,7 @@ import android.view.MenuItem;
  * This activity is mostly just a 'shell' activity containing nothing
  * more than a {@link TopTracksActivityFragment}.
  */
-public class TopTracksActivity extends AppCompatActivity {
+public class TopTracksActivity extends AppCompatActivity implements TopTracksActivityFragment.TopTracksCallbacksInterface{
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,8 +44,8 @@ public class TopTracksActivity extends AppCompatActivity {
             // Create the detail topTracksActivityFragment and add it to the activity
             // using a topTracksActivityFragment transaction.
             Bundle arguments = new Bundle();
-            arguments.putString(TopTracksActivityFragment.ARTIST_ID,
-                    getIntent().getStringExtra(TopTracksActivityFragment.ARTIST_ID));
+            arguments.putString(getString(R.string.artist_id),
+                    getIntent().getStringExtra(getString(R.string.artist_id)));
             TopTracksActivityFragment fragment = new TopTracksActivityFragment();
             fragment.setArguments(arguments);
             getFragmentManager().beginTransaction()
@@ -64,4 +70,11 @@ public class TopTracksActivity extends AppCompatActivity {
         }
         return super.onOptionsItemSelected(item);
     }
+
+    @Override
+    public void onTopTrackSelected(List<Tracks> listOfTracksForPlayer, int selectedTrackPosition) {
+        Intent mediaPlayerIntent = new Intent(this, MediaPlayerActivity.class);
+        mediaPlayerIntent.putParcelableArrayListExtra(getString(R.string.track_list_key), (ArrayList<? extends Parcelable>) listOfTracksForPlayer);
+        mediaPlayerIntent.putExtra(getString(R.string.track_position_key), selectedTrackPosition);
+        startActivity(mediaPlayerIntent);    }
 }

@@ -1,10 +1,11 @@
 package com.example.adityadev.masteruimapping;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Parcelable;
-import android.support.v4.app.Fragment;
+import android.support.v4.app.DialogFragment;
 import android.support.v4.view.MenuItemCompat;
 import android.support.v7.widget.ShareActionProvider;
 import android.util.Log;
@@ -22,7 +23,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
-import com.adityadevg.spotifystreamer.toptracks.Tracks;
+import com.example.adityadev.masteruimapping.toptracks.Tracks;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
@@ -32,14 +33,14 @@ import java.util.List;
 /**
  * A placeholder fragment containing a simple view.
  */
-public class MediaPlayerActivityFragment extends Fragment implements MediaService.MediaPlayerControlInterface {
+public class MediaPlayerActivityFragment extends DialogFragment implements MediaService.MediaPlayerControlInterface {
 
     private static final int IMG_SIZE = 600;
     private static final int MILLIS = 1000;
     private static final int SECS = 60;
     private static final long SEEK_BAR_UPDATE_INTERVAL = 500;
     private String previewUrl;
-    public List<Tracks> tracksList;
+    public List<Tracks> listOfTracks;
     private Tracks currentTrack;
     private int position;
     private int trackPosition;
@@ -47,45 +48,38 @@ public class MediaPlayerActivityFragment extends Fragment implements MediaServic
     private boolean isTrackPlaying = false;
     private int currentPosition;
     private boolean isServiceOn = false;
+    private View rootView;
+    private TextView artistName_tv;
+    private TextView albumName_tv;
+    private TextView mediaTrackName_tv;
+    private ImageView albumImage_iv;
+    private ImageButton prevTrack_ib;
+    private ImageButton playPauseTrack_ib;
+    private ImageButton nextTrack_ib;
+    private TextView elapsedTime_tv;
+    private TextView trackDuration_tv;
+    private SeekBar seekBar;
+    private ToggleButton notificationsToggleMenu;
 
     public MediaPlayerActivityFragment() {
         setHasOptionsMenu(true);
     }
 
-    private View rootView;
-    TextView artistName_tv;
-    TextView albumName_tv;
-    TextView mediaTrackName_tv;
-    ImageView albumImage_iv;
-    ImageButton prevTrack_ib;
-    ImageButton playPauseTrack_ib;
-    ImageButton nextTrack_ib;
-    TextView elapsedTime_tv;
-    TextView trackDuration_tv;
-    SeekBar seekBar;
-    ToggleButton notificationsToggleMenu;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
-/*
         super.onCreate(savedInstanceState);
-        Intent baseIntent = getActivity().getIntent();
-        tracksList = baseIntent.getParcelableArrayListExtra(getString(R.string.track_list_key));
-        position = baseIntent.getIntExtra(getString(R.string.track_position_key), -1);
+        if (null == savedInstanceState || !savedInstanceState.containsKey(getString(R.string.track_list_key))) {
+        }
+            /*if (null != getArguments() && getArguments().containsKey(KEY_TRACK_LIST) && getArguments().containsKey(KEY_TRACK_NUMBER)) {
+            trackList = getArguments().getParcelableArrayList(KEY_TRACK_LIST);
+            currentTrackPosition = getArguments().getInt(KEY_TRACK_NUMBER);*/
 
         Intent mediaServiceIntent = new Intent(getActivity(), MediaService.class);
-        mediaServiceIntent.setAction(MediaService.ACTION_PLAY);
-        mediaServiceIntent.putParcelableArrayListExtra(getString(R.string.track_list_key), (ArrayList<? extends Parcelable>) this.tracksList);
-        mediaServiceIntent.putExtra(getString(R.string.track_position_key), this.position);
-        getActivity().startService(mediaServiceIntent);*/
-
-        super.onCreate(savedInstanceState);
-        Intent mediaServiceIntent = new Intent(getActivity(), MediaService.class);
-        mediaServiceIntent.putParcelableArrayListExtra(getString(R.string.track_list_key), (ArrayList<? extends Parcelable>) tracksList);
+        mediaServiceIntent.putParcelableArrayListExtra(getString(R.string.track_list_key), (ArrayList<? extends Parcelable>) listOfTracks);
         mediaServiceIntent.putExtra(getString(R.string.track_position_key), position);
         mediaServiceIntent.setAction(getString(R.string.ACTION_NOW_PLAYING));
         getActivity().startService(mediaServiceIntent);
-
     }
 
     @Override
@@ -93,9 +87,64 @@ public class MediaPlayerActivityFragment extends Fragment implements MediaServic
         super.onStart();
     }
 
+    /**
+     * A callback interface that all activities containing this fragment must
+     * implement. This mechanism allows activities to be notified of item
+     * selections.
+     */
+    public interface MediaPlayerCallbacksInterface {
+        /**
+         * Callback for when a track has been started.
+         */
+        public void onSelectedTrackStarted(String externalURL);
+        /**
+         * Callback for when a track has been started.
+         */
+        public void onSelectedTrackCompleted();
+    }
+
+    /**
+     * A dummy implementation of the {@link MediaPlayerCallbacksInterface} interface that does
+     * nothing. Used only when this fragment is not attached to an activity.
+     */
+    private static MediaPlayerCallbacksInterface sDummyMediaPlayerCallbacksInterface = new MediaPlayerCallbacksInterface() {
+        @Override
+        public void onSelectedTrackStarted(String externalURL) {
+
+        }
+
+        @Override
+        public void onSelectedTrackCompleted() {
+
+        }
+    };
+
+    /**
+     * The fragment's current callback object, which is notified of list item
+     * clicks.
+     */
+    private MediaPlayerCallbacksInterface mMediaPlayerCallbacksInterface = sDummyMediaPlayerCallbacksInterface;
+
+    @Override
+    public void onAttach(Activity activity) {
+        super.onAttach(activity);
+        // Activities containing this fragment must implement its callbacks.
+        if (!(activity instanceof MediaPlayerCallbacksInterface)) {
+            throw new IllegalStateException("Activity must implement fragment's callbacks.");
+        }
+        mMediaPlayerCallbacksInterface = (MediaPlayerCallbacksInterface) activity;
+    }
+
+    @Override
+    public void onDetach() {
+        super.onDetach();
+        mMediaPlayerCallbacksInterface = sDummyMediaPlayerCallbacksInterface;
+    }
+
+
     @Override
     public void onSaveInstanceState(Bundle bundle) {
-        bundle.putParcelableArrayList(getString(R.string.tracklist_parcel_key), (ArrayList<? extends Parcelable>) tracksList);
+        bundle.putParcelableArrayList(getString(R.string.track_list_key), (ArrayList<? extends Parcelable>) listOfTracks);
         bundle.putInt(getString(R.string.track_number_key), currentPosition);
         bundle.putParcelable(getString(R.string.current_track_key), currentTrack);
         super.onSaveInstanceState(bundle);
@@ -153,20 +202,20 @@ public class MediaPlayerActivityFragment extends Fragment implements MediaServic
                     playPauseTrack_ib.setImageResource(android.R.drawable.ic_media_pause);
                     if (trackPosition == trackDuration && trackPosition > 0) {
                         Intent baseIntent = getActivity().getIntent();
-                        tracksList = baseIntent.getParcelableArrayListExtra(getString(R.string.track_list_key));
+                        listOfTracks = baseIntent.getParcelableArrayListExtra(getString(R.string.track_list_key));
                         currentPosition = baseIntent.getIntExtra(getString(R.string.track_position_key), -1);
-                        currentTrack = tracksList.get(currentPosition);
+                        currentTrack = listOfTracks.get(currentPosition);
                         Intent startServiceIntent = new Intent(getActivity(), MediaService.class);
-                        startServiceIntent.putParcelableArrayListExtra(getString(R.string.track_list_key), (ArrayList<? extends Parcelable>) tracksList);
+                        startServiceIntent.putParcelableArrayListExtra(getString(R.string.track_list_key), (ArrayList<? extends Parcelable>) listOfTracks);
                         startServiceIntent.putExtra(getString(R.string.track_position_key), currentPosition);
-                        startServiceIntent.setAction(MediaService.ACTION_PLAY);
+                        startServiceIntent.setAction(getString(R.string.action_play));
                         getActivity().startService(startServiceIntent);
                     }
                 } else {
                     playPauseTrack_ib.setImageResource(android.R.drawable.ic_media_play);
                 }
                 Intent startServiceIntent = new Intent(getActivity(), MediaService.class);
-                startServiceIntent.setAction(MediaService.ACTION_PLAY);
+                startServiceIntent.setAction(getString(R.string.action_play));
                 getActivity().startService(startServiceIntent);
             }
         });
@@ -205,13 +254,13 @@ public class MediaPlayerActivityFragment extends Fragment implements MediaServic
                 // if the song is finished playing
                 if (trackPosition == trackDuration && trackPosition > 0) {
                     Intent intent = getActivity().getIntent();
-                    tracksList = intent.getParcelableArrayListExtra(getString(R.string.track_list_key));
+                    listOfTracks = intent.getParcelableArrayListExtra(getString(R.string.track_list_key));
                     currentPosition = intent.getIntExtra(getString(R.string.track_position_key), -1);
                     Intent startServiceIntent = new Intent(getActivity(), MediaService.class);
-                    startServiceIntent.putParcelableArrayListExtra(getString(R.string.track_list_key), (ArrayList<? extends Parcelable>) tracksList);
+                    startServiceIntent.putParcelableArrayListExtra(getString(R.string.track_list_key), (ArrayList<? extends Parcelable>) listOfTracks);
                     startServiceIntent.putExtra(getString(R.string.track_position_key), currentPosition);
                     startServiceIntent.putExtra(getString(R.string.Seekbar_Current_Position), seekBar.getProgress());
-                    startServiceIntent.setAction(MediaService.ACTION_PLAY);
+                    startServiceIntent.setAction(getString(R.string.action_play));
                     getActivity().startService(startServiceIntent);
 
                 } else {
@@ -224,23 +273,23 @@ public class MediaPlayerActivityFragment extends Fragment implements MediaServic
         });
 
         if (!isServiceOn) {
-            if (savedInstanceState == null || !savedInstanceState.containsKey(getString(R.string.tracklist_parcel_key))) {
+            if (savedInstanceState == null || !savedInstanceState.containsKey(getString(R.string.track_list_key))) {
                 Intent intent = getActivity().getIntent();
-                tracksList = intent.getParcelableArrayListExtra(getString(R.string.track_list_key));
+                listOfTracks = intent.getParcelableArrayListExtra(getString(R.string.track_list_key));
                 currentPosition = intent.getIntExtra(getString(R.string.track_position_key), -1);
                 Intent startServiceIntent = new Intent(getActivity(), MediaService.class);
-                startServiceIntent.putParcelableArrayListExtra(getString(R.string.track_list_key), (ArrayList<? extends Parcelable>) tracksList);
+                startServiceIntent.putParcelableArrayListExtra(getString(R.string.track_list_key), (ArrayList<? extends Parcelable>) listOfTracks);
                 startServiceIntent.putExtra(getString(R.string.track_position_key), currentPosition);
-                startServiceIntent.setAction(MediaService.ACTION_PLAY);
+                startServiceIntent.setAction(getString(R.string.action_play));
                 getActivity().startService(startServiceIntent);
             } else {
-                tracksList = savedInstanceState.getParcelableArrayList(getString(R.string.tracklist_parcel_key));
+                listOfTracks = savedInstanceState.getParcelableArrayList(getString(R.string.track_list_key));
                 currentPosition = savedInstanceState.getInt(getString(R.string.track_number_key), -1);
                 currentTrack = savedInstanceState.getParcelable(getString(R.string.current_track_key));
             }
 
-            if (null != tracksList && tracksList.size() > 0) {
-                currentTrack = tracksList.get(currentPosition);
+            if (null != listOfTracks && listOfTracks.size() > 0) {
+                currentTrack = listOfTracks.get(currentPosition);
                 if (null != currentTrack) {
                     artistName_tv.setText(currentTrack.getArtistName());
                     albumName_tv.setText(currentTrack.getAlbumName());
@@ -324,7 +373,7 @@ public class MediaPlayerActivityFragment extends Fragment implements MediaServic
 
     @Override
     public void sendTrackList(List<Tracks> trackList) {
-        this.tracksList = trackList;
+        this.listOfTracks = trackList;
     }
 
     @Override

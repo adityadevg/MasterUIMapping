@@ -27,6 +27,20 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".MainArtistActivity" />
         </activity>
+        <activity
+            android:name=".MediaPlayerActivity"
+            android:label="@string/title_activity_media"
+            android:parentActivityName=".TopTracksActivity">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".TopTracksActivity" />
+        </activity>
+        <activity android:name=".SettingsActivity" />
+
+        <service
+            android:name=".MediaService"
+            android:enabled="true"
+            android:exported="true"></service>
     </application>
 
 </manifest>

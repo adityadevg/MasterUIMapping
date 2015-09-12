@@ -34,7 +34,7 @@ import retrofit.RetrofitError;
  * also supports tablet devices by allowing list items to be given an
  * 'activated' state upon selection. This helps indicate which item is
  * currently being viewed in a {@link TopTracksActivityFragment}.
- * <p/>
+ * <p>
  */
 public class MainArtistActivityFragment extends Fragment {
 
@@ -44,7 +44,6 @@ public class MainArtistActivityFragment extends Fragment {
     private SpotifyApi api;
     private SpotifyService spotify;
     private ListView listView;
-    private final int MAX_NO_OF_ARTISTS = 10;
 
     /**
      * The serialization (saved instance state) Bundle key representing the
@@ -56,7 +55,7 @@ public class MainArtistActivityFragment extends Fragment {
      * The fragment's current callback object, which is notified of list item
      * clicks.
      */
-    private artistCallbacksInterface mArtistCallbacksInterface = sDummyArtistCallbacksInterface;
+    private ArtistCallbacksInterface mArtistCallbacksInterface = sDummyArtistCallbacksInterface;
 
     /**
      * The current activated item position. Only used on tablets.
@@ -79,7 +78,7 @@ public class MainArtistActivityFragment extends Fragment {
      * implement. This mechanism allows activities to be notified of item
      * selections.
      */
-    public interface artistCallbacksInterface {
+    public interface ArtistCallbacksInterface {
         /**
          * Callback for when an item has been selected.
          */
@@ -87,10 +86,10 @@ public class MainArtistActivityFragment extends Fragment {
     }
 
     /**
-     * A dummy implementation of the {@link artistCallbacksInterface} interface that does
+     * A dummy implementation of the {@link ArtistCallbacksInterface} interface that does
      * nothing. Used only when this fragment is not attached to an activity.
      */
-    private static artistCallbacksInterface sDummyArtistCallbacksInterface = new artistCallbacksInterface() {
+    private static ArtistCallbacksInterface sDummyArtistCallbacksInterface = new ArtistCallbacksInterface() {
         @Override
         public void onArtistSelected(Artist artist) {
         }
@@ -100,9 +99,9 @@ public class MainArtistActivityFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if (savedInstanceState != null && savedInstanceState.containsKey(getString(R.string
-                .saved_before_rotation))){
+                .saved_before_rotation))) {
             listOfArtists = savedInstanceState.getParcelableArrayList(getString(R.string.saved_before_rotation));
-        } else{
+        } else {
             listOfArtists.clear();
         }
         // Add this line in order for this topTracksActivityFragment to handle menu events.
@@ -114,10 +113,10 @@ public class MainArtistActivityFragment extends Fragment {
         super.onAttach(activity);
 
         // Activities containing this fragment must implement its callbacks.
-        if (!(activity instanceof artistCallbacksInterface)) {
+        if (!(activity instanceof ArtistCallbacksInterface)) {
             throw new IllegalStateException(getString(R.string.activity_must_implement_fragments_callbacks));
         }
-        mArtistCallbacksInterface = (artistCallbacksInterface) activity;
+        mArtistCallbacksInterface = (ArtistCallbacksInterface) activity;
     }
 
     @Override
@@ -143,16 +142,15 @@ public class MainArtistActivityFragment extends Fragment {
                     if (!artistToSearch.isEmpty()) {
                         // search for artist through spotify wrapper and asynctask
                         new FetchArtistTask().execute(artistToSearch);
-                    }
-                    else {
-                        Toast.makeText(getActivity(), getString(R.string.no_artists_found),Toast.LENGTH_LONG).show();
+                    } else {
+                        Toast.makeText(getActivity(), getString(R.string.no_artists_found), Toast.LENGTH_LONG).show();
                     }
                 }
                 return false;
             }
         });
 
-        listView = (ListView) rootView.findViewById(android.R.id.list);
+        listView = (ListView) rootView.findViewById(R.id.artist_list_view);
         artistArrayAdapter = new ArtistArrayAdapter(getActivity(), listOfArtists);
         listView.setAdapter(artistArrayAdapter);
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -176,13 +174,14 @@ public class MainArtistActivityFragment extends Fragment {
 
     public class FetchArtistTask extends AsyncTask<String, Void, List<Artist>> {
         private final String LOG_TAG = MainArtistActivity.class.getSimpleName();
-        List<kaaes.spotify.webapi.android.models.Artist> spotifyArtistList;
+        private List<kaaes.spotify.webapi.android.models.Artist> spotifyArtistList;
+        private List<Artist> localListOfArtists = new ArrayList<Artist>();
 
         /**
          * Override this method to perform a computation on a background thread. The
          * specified parameters are the parameters passed to {@link #execute}
          * by the caller of this task.
-         * <p/>
+         * <p>
          * This method can call {@link #publishProgress} to publish updates
          * on the UI thread.
          *
@@ -194,8 +193,9 @@ public class MainArtistActivityFragment extends Fragment {
          */
         @Override
         protected List<Artist> doInBackground(String... params) {
+
             try {
-                listOfArtists.clear();
+                localListOfArtists.clear();
                 ArtistsPager results = spotify.searchArtists(params[0]);
                 if (null != results) {
                     spotifyArtistList = results.artists.items;
@@ -203,7 +203,8 @@ public class MainArtistActivityFragment extends Fragment {
                         String currentArtistName;
                         String currentArtistURL;
                         String currentArtistID;
-                        for (int i = 0; i < MAX_NO_OF_ARTISTS; i++) {
+                        int size = spotifyArtistList.size();
+                        for (int i = 0; i < size; i++) {
                             currentArtistName = spotifyArtistList.get(i).name;
                             currentArtistURL = null != spotifyArtistList.get(i).images &&
                                     !spotifyArtistList.get(i).images.isEmpty() && null
@@ -211,16 +212,15 @@ public class MainArtistActivityFragment extends Fragment {
                                     .get(i).images.get(0) ? spotifyArtistList
                                     .get(i).images.get(0).url : "";
                             currentArtistID = spotifyArtistList.get(i).id;
-                            listOfArtists.add(new Artist(currentArtistName, currentArtistURL,
+                            localListOfArtists.add(new Artist(currentArtistName, currentArtistURL,
                                     currentArtistID));
                         }
                     }
                 }
-            }
-            catch(RetrofitError rfe){
+            } catch (RetrofitError rfe) {
                 Log.d(LOG_TAG, rfe.getMessage());
             }
-            return listOfArtists;
+            return localListOfArtists;
         }
 
         @Override
@@ -230,12 +230,10 @@ public class MainArtistActivityFragment extends Fragment {
                 if (artistResult.isEmpty())
                     Toast.makeText(getActivity(), getString(R.string.no_artists_found),
                             (Toast.LENGTH_LONG)).show();
-                else{
-                    for (int i = 0; i < MAX_NO_OF_ARTISTS; i++){
-                        artistArrayAdapter.add(artistResult.get(i));
-                    }
+                else {
+                    artistArrayAdapter.addAll(artistResult);
                 }
-                Log.d("on post execute Count: ", Arrays.toString(listOfArtists.toArray()));
+                Log.d("on post execute Count: ", Arrays.toString(localListOfArtists.toArray()));
             }
         }
     }
