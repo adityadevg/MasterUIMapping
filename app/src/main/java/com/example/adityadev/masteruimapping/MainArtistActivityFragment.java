@@ -21,7 +21,6 @@ import com.example.adityadev.masteruimapping.artistsmodel.Artist;
 import com.example.adityadev.masteruimapping.artistsmodel.ArtistArrayAdapter;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import kaaes.spotify.webapi.android.SpotifyApi;
@@ -233,7 +232,6 @@ public class MainArtistActivityFragment extends Fragment {
                 else {
                     artistArrayAdapter.addAll(artistResult);
                 }
-                Log.d("on post execute Count: ", Arrays.toString(localListOfArtists.toArray()));
             }
         }
     }

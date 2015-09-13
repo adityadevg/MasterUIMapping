@@ -4,14 +4,14 @@
     <string name="title_activity_top_tracks">Top Tracks</string>
     <string name="artist_id_key">Artist ID Key</string>
     <string name="artist_name_key">Artist Name Key</string>
-    <string name="country">country</string>
-    <string name="country_name">US</string>
+    <string name="country_key">country</string>
+    <string name="default_country_name">US</string>
     <string name="saved_before_rotation">Saved Before Rotation</string>
     <string name="top_tracks">Top Tracks</string>
     <string name="title_activity_media">Spotify Player</string>
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
-    <string name="track_list_key">Track List Key</string>
+    <string name="bundle_track_list_key">Budle Track List Key</string>
     <string name="track_position_key">Track Position Key</string>
     <string name="album_name">Album Name</string>
     <string name="artist_name">Artist Name</string>
@@ -32,17 +32,25 @@
     <string name="ACTION_SEEKBAR_POS_CHANGED">ACTION_SEEKBAR_POS_CHANGED</string>
     <string name="Seekbar_Current_Position">Seekbar Current Position</string>
     <string name="ACTION_SEEKBAR_PROGRESS">Action Seekbar Progress</string>
-    <string name="ACTION_NOW_PLAYING">Now Playing</string>
-    <string name="track_number_key">track number key</string>
+    <string name="ACTION_NOW_PLAYING">Action Now Playing</string>
+    <string name="bundle_track_number_key">Bundle Track Number Key</string>
     <string name="current_track_key">current track key</string>
     <string name="no_song_playing">No Song Playing</string>
-    <string name="now_playing">Now Playing</string>
     <string name="no_artists_found">No Artists Found</string>
     <string name="activity_must_implement_fragments_callbacks">Activity must implement fragment\'s callbacks</string>
     <string name="no_tracks_found">No Tracks Found</string>
     <!-- The topTracksActivityFragment argument representing the item ID that this topTracksActivityFragment
     represents.-->
     <string name="artist_id">Artist ID</string>
-    <string name="action_play">com.example.action.PLAY</string>
+    <string name="ACTION_PLAY">com.example.action.PLAY</string>
     <string name="fragment_media_player">Fragment Media Player</string>
+    <string name="lock_screen_controls">lock screen controls</string>
+    <string name="track_duration_key">track duration key</string>
+    <string name="track_time_key">track time key</string>
+    <string name="is_track_playing_key">is track playing key</string>
+    <string name="now_playing">Now Playing</string>
+    <string name="track_list_key">Track List Key</string>
+    <string name="track_number_key">Track Number Key</string>
+    <string name="MISC_ACTION">Miscellaneous Action</string>
+    <string name="spotify_external_url">Spotify External URL</string>
 </resources>

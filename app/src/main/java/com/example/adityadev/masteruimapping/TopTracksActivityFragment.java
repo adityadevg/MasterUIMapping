@@ -53,7 +53,7 @@ public class TopTracksActivityFragment extends Fragment {
 
     @Override
     public void onSaveInstanceState(Bundle bundle) {
-        bundle.putParcelableArrayList(getString(R.string.track_list_key), (ArrayList<? extends Parcelable>) listOfTracks);
+        bundle.putParcelableArrayList(getString(R.string.bundle_track_list_key), (ArrayList<? extends Parcelable>) listOfTracks);
         super.onSaveInstanceState(bundle);
     }
 
@@ -62,7 +62,7 @@ public class TopTracksActivityFragment extends Fragment {
         super.onAttach(activity);
         // Activities containing this fragment must implement its callbacks.
         if (!(activity instanceof TopTracksCallbacksInterface)) {
-            throw new IllegalStateException("Activity must implement fragment's callbacks.");
+            throw new IllegalStateException(getString(R.string.activity_must_implement_fragments_callbacks));
         }
         mTopTracksCallbacksInterface = (TopTracksCallbacksInterface) activity;
     }
@@ -99,7 +99,7 @@ public class TopTracksActivityFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        if (null == savedInstanceState || !savedInstanceState.containsKey(getString(R.string.track_list_key))) {
+        if (null == savedInstanceState || !savedInstanceState.containsKey(getString(R.string.bundle_track_list_key))) {
             // get artist name from previous baseIntent
             Intent baseIntent = getActivity().getIntent();
             Artist selectedArtist = baseIntent.getParcelableExtra(getString(R.string.artist_id));
@@ -116,7 +116,7 @@ public class TopTracksActivityFragment extends Fragment {
                 new FetchTracksTask().execute(artistId);
             }
         } else {
-            listOfTracks = savedInstanceState.getParcelableArrayList(getString(R.string.track_list_key));
+            listOfTracks = savedInstanceState.getParcelableArrayList(getString(R.string.bundle_track_list_key));
         }
     }
 
@@ -125,7 +125,9 @@ public class TopTracksActivityFragment extends Fragment {
                              Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_top_tracks, container, false);
         listOfTracks.clear();
+        tracksArrayAdapter = new TracksArrayAdapter(getActivity(), listOfTracks);
         ListView listView = (ListView) rootView.findViewById(R.id.listview_tracks);
+        listView.setAdapter(tracksArrayAdapter);
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -133,8 +135,6 @@ public class TopTracksActivityFragment extends Fragment {
             }
         });
 
-        tracksArrayAdapter = new TracksArrayAdapter(getActivity(), listOfTracks);
-        listView.setAdapter(tracksArrayAdapter);
 
         return rootView;
     }
@@ -142,9 +142,8 @@ public class TopTracksActivityFragment extends Fragment {
     public class FetchTracksTask extends AsyncTask<String, Void, List<Tracks>> {
         private static final int MAX_NO_OF_TRACKS = 10;
         private final String LOG_TAG = TopTracksActivity.class.getSimpleName();
-        List<kaaes.spotify.webapi.android.models.Artist> spotifyArtistList;
-        Map<String, Object> options;
-        kaaes.spotify.webapi.android.models.Tracks spotifyTracks;
+        Map<String, Object> selectCountryOption;
+        kaaes.spotify.webapi.android.models.Tracks spotifyListOfTracks;
         private List<Tracks> localListOfTracks = new ArrayList<Tracks>();
 
 
@@ -156,8 +155,8 @@ public class TopTracksActivityFragment extends Fragment {
          * This method can call {@link #publishProgress} to publish updates
          * on the UI thread.
          *
-         * @param params The parameters of the task.
-         * @return A result, defined by the subclass of this task.
+         * @param params Accepts artistId to search for top tracks
+         * @return List of tracks by the select artist
          * @see #onPreExecute()
          * @see #onPostExecute
          * @see #publishProgress
@@ -166,13 +165,13 @@ public class TopTracksActivityFragment extends Fragment {
         protected List<Tracks> doInBackground(String... params) {
             try {
                 if (null != params[0]) {
-                    localListOfTracks.clear();
                     if (null != params[0]) {
-                        options = new HashMap<String, Object>();
-                        options.put(getString(R.string.country), getString(R.string.country_name));
-                        spotifyTracks = spotifyService.getArtistTopTrack(params[0], options);
-                        if (null != spotifyTracks.tracks && !spotifyTracks.tracks.isEmpty()) {
-                            int size = spotifyTracks.tracks.size() > MAX_NO_OF_TRACKS ? MAX_NO_OF_TRACKS : spotifyTracks.tracks.size();
+                        listOfTracks.clear();
+                        selectCountryOption = new HashMap<String, Object>();
+                        selectCountryOption.put(getString(R.string.country_key), getString(R.string.default_country_name));
+                        spotifyListOfTracks = spotifyService.getArtistTopTrack(params[0], selectCountryOption);
+                        if (null != spotifyListOfTracks.tracks && !spotifyListOfTracks.tracks.isEmpty()) {
+                            int size = spotifyListOfTracks.tracks.size() > MAX_NO_OF_TRACKS ? MAX_NO_OF_TRACKS : spotifyListOfTracks.tracks.size();
                             String albumName;
                             String albumThumbnailLink;
                             String trackName;
@@ -182,7 +181,7 @@ public class TopTracksActivityFragment extends Fragment {
 
                             kaaes.spotify.webapi.android.models.Track currentTrack;
                             for (int i = 0; i < size; i++) {
-                                currentTrack = spotifyTracks.tracks.get(i);
+                                currentTrack = spotifyListOfTracks.tracks.get(i);
                                 if (null != currentTrack && null != currentTrack.album) {
                                     albumName = currentTrack.album.name;
                                     artistName = currentTrack.artists.get(0).name;
@@ -206,10 +205,10 @@ public class TopTracksActivityFragment extends Fragment {
         }
 
         @Override
-        protected void onPostExecute(List<Tracks> tracksResult) {
-            if (null != tracksResult){
-                if (!tracksResult.isEmpty()){
-                    tracksArrayAdapter.addAll(tracksResult);
+        protected void onPostExecute(List<Tracks> listOfTracksResult) {
+            if (null != listOfTracksResult){
+                if (!listOfTracksResult.isEmpty()){
+                    tracksArrayAdapter.addAll(listOfTracksResult);
                 } else{
                     Toast.makeText(getActivity(), getString(R.string.no_tracks_found), (Toast.LENGTH_LONG)).show();
                 }

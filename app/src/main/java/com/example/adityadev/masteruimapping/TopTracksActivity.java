@@ -44,8 +44,8 @@ public class TopTracksActivity extends AppCompatActivity implements TopTracksAct
             // Create the detail topTracksActivityFragment and add it to the activity
             // using a topTracksActivityFragment transaction.
             Bundle arguments = new Bundle();
-            arguments.putString(getString(R.string.artist_id),
-                    getIntent().getStringExtra(getString(R.string.artist_id)));
+            arguments.putParcelable(getString(R.string.artist_id),
+                    getIntent().getParcelableExtra(getString(R.string.artist_id)));
             TopTracksActivityFragment fragment = new TopTracksActivityFragment();
             fragment.setArguments(arguments);
             getFragmentManager().beginTransaction()

@@ -3,6 +3,7 @@ package com.example.adityadev.masteruimapping;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.support.v4.app.FragmentManager;
@@ -31,7 +32,7 @@ import java.util.List;
 public class MainArtistActivity extends AppCompatActivity
         implements MainArtistActivityFragment.ArtistCallbacksInterface,
         TopTracksActivityFragment.TopTracksCallbacksInterface,
-        MediaPlayerActivityFragment.MediaPlayerCallbacksInterface {
+        MediaPlayerCallbacksInterface {
 
     /**
      * Whether or not the activity is in two-pane mode, i.e. running on a tablet
@@ -40,12 +41,18 @@ public class MainArtistActivity extends AppCompatActivity
     protected boolean mTwoPane;
     protected static Bundle arguments;
     private FragmentManager fragmentManager = getSupportFragmentManager();
+    private MediaPlayerDialog mediaPlayerDialog;
     private BroadcastReceiver broadcastReceiver;
+    private String externalURL;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main_artist);
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(getString(R.string.ACTION_NOW_PLAYING));
+        intentFilter.addAction(getString(R.string.MISC_ACTION));
+
         broadcastReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
@@ -53,7 +60,7 @@ public class MainArtistActivity extends AppCompatActivity
 
                 }
             }
-        }
+        };
 
         if (null != findViewById(R.id.frame_top_tracks)) {
             // The detail container view will be present only in the
@@ -88,20 +95,22 @@ public class MainArtistActivity extends AppCompatActivity
         } else {
             // In single-pane mode, simply start the detail activity
             // for the selected item ID.
-            Intent detailIntent = new Intent(this, TopTracksActivity.class);
-            detailIntent.putExtra(getString(R.string.artist_id), selectedArtist);
-            startActivity(detailIntent);
+            Intent topTracksIntent = new Intent(this, TopTracksActivity.class);
+            topTracksIntent.putExtra(getString(R.string.artist_id), selectedArtist);
+            startActivity(topTracksIntent);
         }
     }
 
     @Override
     public void onTopTrackSelected(List<Tracks> listOfTracksForPlayer, int selectedTrackPosition) {
         if (mTwoPane) {
-            // In two-pane mode, show the detail view in this activity by
-            // adding or replacing the detail topTracksActivityFragment using a
-            // topTracksActivityFragment transaction.
-            MediaPlayerActivityFragment mediaPlayerActivityFragment = new MediaPlayerActivityFragment();
-            mediaPlayerActivityFragment.show(fragmentManager, getString(R.string.fragment_media_player));
+            mediaPlayerDialog = new MediaPlayerDialog();
+            Bundle arguments = new Bundle();
+            arguments.putParcelableArrayList(getString(R.string.track_list_key), (ArrayList<? extends Parcelable>) listOfTracksForPlayer);
+            arguments.putInt(getString(R.string.track_position_key), selectedTrackPosition);
+            mediaPlayerDialog.setArguments(arguments);
+            MediaService.setMediaControlInterfaceObj(mediaPlayerDialog);
+            mediaPlayerDialog.show(fragmentManager, getString(R.string.fragment_media_player));
 
         } else {
             // In single-pane mode, simply start the detail activity
@@ -115,11 +124,14 @@ public class MainArtistActivity extends AppCompatActivity
 
     @Override
     public void onSelectedTrackStarted(String externalURL) {
-
+        this.externalURL = externalURL;
     }
 
     @Override
     public void onSelectedTrackCompleted() {
+        mediaPlayerDialog.dismiss();
+        MediaService.unsetTrackEventListenerInterface();
 
+        this.externalURL = "";
     }
 }

@@ -4,13 +4,17 @@ import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.PowerManager;
+import android.preference.PreferenceManager;
 import android.support.v7.app.NotificationCompat;
 import android.util.Log;
 import android.widget.RemoteViews;
@@ -21,7 +25,8 @@ import com.squareup.picasso.Picasso;
 import java.io.IOException;
 import java.util.List;
 
-public class MediaService extends Service implements MediaPlayer.OnPreparedListener, MediaPlayer.OnErrorListener, MediaPlayer.OnCompletionListener {
+public class MediaService extends Service
+        implements MediaPlayer.OnPreparedListener, MediaPlayer.OnErrorListener, MediaPlayer.OnCompletionListener {
     private static final String LOG_TAG = MediaService.class.getSimpleName();
     private static final int NOTIFICATION_ID = 7;
 
@@ -41,12 +46,18 @@ public class MediaService extends Service implements MediaPlayer.OnPreparedListe
     private int position;
     RemoteViews remoteNotificationView;
 
-    NotificationManager notifManager;
-    Notification notif;
+    private NotificationManager notifManager = null;
+    private Notification notif;
+
+    private BroadcastReceiver broadcastReceiver = null;
+    private SharedPreferences sharedPreferences = null;
+    private int isNotifControlVisible = Integer.MIN_VALUE;
+    private NotificationCompat.Builder notifCompatBuilder;
 
     public MediaService() {
 
     }
+
 
     public interface MediaPlayerControlInterface {
         public void onPreviousTrack();
@@ -59,13 +70,13 @@ public class MediaService extends Service implements MediaPlayer.OnPreparedListe
 
         public void onTrackCompleted();
 
-        public void sendTrackDuration(int duration);
+        public void setTrackDuration(int duration);
 
-        public void sendElapsedTime(int elapsedTime);
+        public void setElapsedTime(int elapsedTime);
 
-        public void sendTrackNo(int trackNo);
+        public void setTrackNo(int trackNo);
 
-        public void sendTrackList(List<Tracks> trackList);
+        public void setTrackList(List<Tracks> trackList);
 
         public void isSpotifyPlayerOn(boolean isOn);
 
@@ -76,15 +87,134 @@ public class MediaService extends Service implements MediaPlayer.OnPreparedListe
         public void nowPlayingStateUpdated();
     }
 
-    public static MediaPlayerControlInterface mediaPlayerControlInterfaceObj;
+    public static MediaPlayerControlInterface dummyMediaPlayerControlInterfaceObj = new MediaPlayerControlInterface() {
+        @Override
+        public void onPreviousTrack() {
 
-    public static void setMediaControlInterfaceObj(MediaPlayerControlInterface mediaPlayerControlInterface) {
-        mediaPlayerControlInterfaceObj = mediaPlayerControlInterface;
+        }
+
+        @Override
+        public void onNextTrack() {
+
+        }
+
+        @Override
+        public void onTrackPaused() {
+
+        }
+
+        @Override
+        public void onTrackResumed() {
+
+        }
+
+        @Override
+        public void onTrackCompleted() {
+
+        }
+
+        @Override
+        public void setTrackDuration(int duration) {
+
+        }
+
+        @Override
+        public void setElapsedTime(int elapsedTime) {
+
+        }
+
+        @Override
+        public void setTrackNo(int trackNo) {
+
+        }
+
+        @Override
+        public void setTrackList(List<Tracks> trackList) {
+
+        }
+
+        @Override
+        public void isSpotifyPlayerOn(boolean isOn) {
+
+        }
+
+        @Override
+        public void onTrackStarted() {
+
+        }
+
+        @Override
+        public void isSpotifyPlayerPaused(boolean isPaused) {
+
+        }
+
+        @Override
+        public void nowPlayingStateUpdated() {
+
+        }
+    };
+
+    public static MediaPlayerControlInterface mediaPlayerControlInterfaceObj = dummyMediaPlayerControlInterfaceObj;
+
+    public static void setMediaControlInterfaceObj(MediaPlayerControlInterface localMediaPlayerControlInterfaceObj) {
+        mediaPlayerControlInterfaceObj = localMediaPlayerControlInterfaceObj;
     }
+
+    public static void unsetMediaControlInterfaceObj() {
+        mediaPlayerControlInterfaceObj = dummyMediaPlayerControlInterfaceObj;
+    }
+
+
+    public interface TrackEventListenerInterface {
+        public void onTrackCompleted();
+
+        public void onTrackStarted(String spotifyExternalURL);
+    }
+
+    private static TrackEventListenerInterface dummyTrackEventListenerObj = new TrackEventListenerInterface() {
+        @Override
+        public void onTrackCompleted() {
+
+        }
+
+        @Override
+        public void onTrackStarted(String spotifyExternalURL) {
+
+        }
+    };
+
+    private static TrackEventListenerInterface mTrackEventListenerObj = dummyTrackEventListenerObj;
+
+    public static void setTrackEventListenerInterface(TrackEventListenerInterface trackEventListenerInterfaceObj) {
+        mTrackEventListenerObj = trackEventListenerInterfaceObj;
+
+    }
+
+    public static void unsetTrackEventListenerInterface() {
+        mTrackEventListenerObj = dummyTrackEventListenerObj;
+    }
+
 
     @Override
     public void onCreate() {
         super.onCreate();
+
+        broadcastReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context baseContext, Intent baseIntent) {
+                if (baseIntent.getAction().equals(getString(R.string.lock_screen_controls))) {
+                    sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+                    if (sharedPreferences.getBoolean(getString(R.string.lock_screen_controls), true)) {
+                        isNotifControlVisible = Notification.VISIBILITY_PUBLIC;
+                    } else {
+                        isNotifControlVisible = Notification.VISIBILITY_PRIVATE;
+                    }
+                    notifCompatBuilder.setVisibility(isNotifControlVisible);
+                    notifManager.notify(NOTIFICATION_ID, notif);
+                }
+            }
+        };
+
     }
 
     public void initSpotifyPlayer() {
@@ -114,7 +244,7 @@ public class MediaService extends Service implements MediaPlayer.OnPreparedListe
         PendingIntent pendingNextListIntent = PendingIntent.getService(this, 0, nextIntent, 0);
 
 
-        if (null != baseIntent && baseIntent.getAction().equals(getString(R.string.action_play))) {
+        if (null != baseIntent && baseIntent.getAction().equals(getString(R.string.ACTION_PLAY))) {
 
             tracksList = baseIntent.getParcelableArrayListExtra(getString(R.string.track_list_key));
             position = baseIntent.getIntExtra(getString(R.string.track_position_key), -1);
@@ -208,28 +338,28 @@ public class MediaService extends Service implements MediaPlayer.OnPreparedListe
             }
         } else if (null != baseIntent && baseIntent.getAction().equals(getString(R.string.ACTION_SEEKBAR_PROGRESS))) {
             if (null != spotifyPlayer && null != mediaPlayerControlInterfaceObj) {
-                mediaPlayerControlInterfaceObj.sendElapsedTime(spotifyPlayer.getCurrentPosition());
+                mediaPlayerControlInterfaceObj.setElapsedTime(spotifyPlayer.getCurrentPosition());
             }
         } else if (null != baseIntent && baseIntent.getAction().equals(getString(R.string.ACTION_NOW_PLAYING))) {
-        if (null != mediaPlayerControlInterfaceObj) {
-            if(null != spotifyPlayer){
-                mediaPlayerControlInterfaceObj.isSpotifyPlayerOn(true);
-                mediaPlayerControlInterfaceObj.sendElapsedTime(spotifyPlayer.getCurrentPosition());
-                mediaPlayerControlInterfaceObj.sendTrackDuration(spotifyPlayer.getDuration());
-                mediaPlayerControlInterfaceObj.sendTrackList(tracksList);
-                mediaPlayerControlInterfaceObj.sendTrackNo(songPosn);
-                mediaPlayerControlInterfaceObj.isSpotifyPlayerPaused(spotifyPlayer.isPlaying());
-            } else{
-                mediaPlayerControlInterfaceObj.isSpotifyPlayerOn(false);
+            if (null != mediaPlayerControlInterfaceObj) {
+                if (null != spotifyPlayer) {
+                    mediaPlayerControlInterfaceObj.isSpotifyPlayerOn(true);
+                    mediaPlayerControlInterfaceObj.setElapsedTime(spotifyPlayer.getCurrentPosition());
+                    mediaPlayerControlInterfaceObj.setTrackDuration(spotifyPlayer.getDuration());
+                    mediaPlayerControlInterfaceObj.setTrackList(tracksList);
+                    mediaPlayerControlInterfaceObj.setTrackNo(songPosn);
+                    mediaPlayerControlInterfaceObj.isSpotifyPlayerPaused(spotifyPlayer.isPlaying());
+                } else {
+                    mediaPlayerControlInterfaceObj.isSpotifyPlayerOn(false);
+                }
+                mediaPlayerControlInterfaceObj.nowPlayingStateUpdated();
             }
-            mediaPlayerControlInterfaceObj.nowPlayingStateUpdated();
         }
-    }
         return super.onStartCommand(baseIntent, flags, startId);
     }
 
     private void startStreamingMusic() {
-        if (null != spotifyPlayer){
+        if (null != spotifyPlayer) {
             spotifyPlayer.reset();
             try {
                 spotifyPlayer.setDataSource(musicUrl);
@@ -243,8 +373,6 @@ public class MediaService extends Service implements MediaPlayer.OnPreparedListe
     @Override
     public IBinder onBind(Intent intent) {
         // TODO: Return the communication channel to the service.
-
-
         return null;
     }
 
@@ -254,7 +382,7 @@ public class MediaService extends Service implements MediaPlayer.OnPreparedListe
             mediaPlayerControlInterfaceObj.onTrackCompleted();
         if (null != this.spotifyPlayer)
             this.spotifyPlayer.release();
-        this.spotifyPlayer = null;
+        spotifyPlayer = null;
         stopForeground(true);
     }
 
@@ -267,9 +395,12 @@ public class MediaService extends Service implements MediaPlayer.OnPreparedListe
     public void onPrepared(MediaPlayer spotifyPlayer) {
         spotifyPlayer.seekTo(currentPositionInTrack);
         spotifyPlayer.start();
-
+        Intent broadcastIntent = new Intent();
+        broadcastIntent.setAction(getString(R.string.ACTION_NOW_PLAYING));
+        broadcastIntent.putExtra(getString(R.string.spotify_external_url), currentTrack.getExternalSpotifyLink());
+        sendBroadcast(broadcastIntent);
         if (null != mediaPlayerControlInterfaceObj) {
-            mediaPlayerControlInterfaceObj.sendTrackDuration(spotifyPlayer.getDuration());
+            mediaPlayerControlInterfaceObj.setTrackDuration(spotifyPlayer.getDuration());
             mediaPlayerControlInterfaceObj.onTrackStarted();
         }
 
@@ -280,10 +411,10 @@ public class MediaService extends Service implements MediaPlayer.OnPreparedListe
             @Override
             public void run() {
                 if (!currentTrack.getAlbumImageURL().isEmpty())
-                Picasso
-                        .with(MediaService.this)
-                        .load(currentTrack.getAlbumImageURL())
-                        .into(remoteNotificationView, R.id.album_thumbnail_imageview, NOTIFICATION_ID, notif);
+                    Picasso
+                            .with(MediaService.this)
+                            .load(currentTrack.getAlbumImageURL())
+                            .into(remoteNotificationView, R.id.album_thumbnail_imageview, NOTIFICATION_ID, notif);
             }
         });
     }
@@ -291,8 +422,8 @@ public class MediaService extends Service implements MediaPlayer.OnPreparedListe
     @Override
     public void onDestroy() {
         super.onDestroy();
-        if(null != mediaPlayerControlInterfaceObj){
-            mediaPlayerControlInterfaceObj = null;
+        if (null != mediaPlayerControlInterfaceObj) {
+            mediaPlayerControlInterfaceObj = dummyMediaPlayerControlInterfaceObj;
         }
     }
 }

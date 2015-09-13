@@ -26,8 +26,7 @@
         android:layout_height="wrap_content"
         android:id="@+id/albumArtImageView"
         android:layout_gravity="center_horizontal"
-        android:minHeight="@dimen/abc_search_view_preferred_width"
-        android:background="@android:drawable/star_big_on" />
+        android:minHeight="@dimen/abc_search_view_preferred_width" />
 
     <TextView
         android:layout_width="wrap_content"
