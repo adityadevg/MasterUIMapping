@@ -1,6 +1,5 @@
 package com.example.adityadev.masteruimapping;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -110,22 +109,6 @@ public class MediaPlayerActivityFragment extends Fragment
      */
     private static MediaPlayerCallbacksInterface mMediaPlayerCallbacksInterface = sDummyMediaPlayerCallbacksInterface;
 
-    @Override
-    public void onAttach(Activity activity) {
-        super.onAttach(activity);
-        // Activities containing this fragment must implement its callbacks.
-        if (!(activity instanceof MediaPlayerCallbacksInterface)) {
-            throw new IllegalStateException(getString(R.string.activity_must_implement_fragments_callbacks));
-        }
-        mMediaPlayerCallbacksInterface = (MediaPlayerCallbacksInterface) activity;
-    }
-
-    @Override
-    public void onDetach() {
-        super.onDetach();
-        mMediaPlayerCallbacksInterface = sDummyMediaPlayerCallbacksInterface;
-    }
-
 
     public static void setMediaPlayerCallbackInterface(MediaPlayerCallbacksInterface mediaPlayerCallbacksInterface) {
         mMediaPlayerCallbacksInterface = mediaPlayerCallbacksInterface;
@@ -144,26 +127,6 @@ public class MediaPlayerActivityFragment extends Fragment
         super.onSaveInstanceState(bundle);
     }
 
-    private Intent createPreviewShareIntent() {
-        Intent previewShareIntent = new Intent(Intent.ACTION_SEND);
-        previewShareIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET);
-        previewShareIntent.setType(getString(R.string.text_plain));
-        previewShareIntent.putExtra(Intent.EXTRA_TEXT, currentTrack.getExternalSpotifyLink());
-        Log.i("External Spotify Link: ", currentTrack.getExternalSpotifyLink());
-        return previewShareIntent;
-    }
-
-    @Override
-    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-        super.onCreateOptionsMenu(menu, inflater);
-
-        MenuItem shareMenuItem = menu.findItem(R.id.action_share);
-
-        ShareActionProvider mShareActionProvider = (ShareActionProvider) MenuItemCompat.getActionProvider((shareMenuItem));
-        if (null != mShareActionProvider) {
-            mShareActionProvider.setShareIntent(createPreviewShareIntent());
-        }
-    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,

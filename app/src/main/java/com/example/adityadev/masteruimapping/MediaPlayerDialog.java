@@ -6,13 +6,8 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.support.v4.app.DialogFragment;
-import android.support.v4.view.MenuItemCompat;
-import android.support.v7.widget.ShareActionProvider;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CompoundButton;
@@ -63,7 +58,16 @@ public class MediaPlayerDialog extends DialogFragment
     private ToggleButton notificationsToggleMenu;
 
     public MediaPlayerDialog() {
-        setHasOptionsMenu(true);
+    }
+
+    public MediaPlayerDialog setMediaPlayerDialogObj(List<Tracks> listOfTracksForPlayer, int selectedTrackPosition) {
+        MediaPlayerDialog mediaPlayerDialogObj = new MediaPlayerDialog();
+        Bundle arguments = new Bundle();
+        arguments.putParcelableArrayList(getString(R.string.track_list_key), (ArrayList<? extends Parcelable>) listOfTracksForPlayer);
+        arguments.putInt(getString(R.string.track_position_key), selectedTrackPosition);
+        mediaPlayerDialogObj.setArguments(arguments);
+        MediaService.setMediaControlInterfaceObj(mediaPlayerDialogObj);
+        return mediaPlayerDialogObj;
     }
 
     @Override
@@ -136,27 +140,6 @@ public class MediaPlayerDialog extends DialogFragment
         bundle.putParcelable(getString(R.string.current_track_key), currentTrack);
 
         super.onSaveInstanceState(bundle);
-    }
-
-    private Intent createPreviewShareIntent() {
-        Intent previewShareIntent = new Intent(Intent.ACTION_SEND);
-        previewShareIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET);
-        previewShareIntent.setType(getString(R.string.text_plain));
-        previewShareIntent.putExtra(Intent.EXTRA_TEXT, currentTrack.getExternalSpotifyLink());
-        Log.i("External Spotify Link: ", currentTrack.getExternalSpotifyLink());
-        return previewShareIntent;
-    }
-
-    @Override
-    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-        super.onCreateOptionsMenu(menu, inflater);
-
-        MenuItem shareMenuItem = menu.findItem(R.id.action_share);
-
-        ShareActionProvider mShareActionProvider = (ShareActionProvider) MenuItemCompat.getActionProvider((shareMenuItem));
-        if (null != mShareActionProvider) {
-            mShareActionProvider.setShareIntent(createPreviewShareIntent());
-        }
     }
 
     @Override
@@ -323,6 +306,7 @@ public class MediaPlayerDialog extends DialogFragment
 
     @Override
     public void onTrackCompleted() {
+        mMediaPlayerCallbacksInterface.onSelectedTrackCompleted();
         trackPosition = trackDuration;
         playPauseTrack_ib.setImageResource(android.R.drawable.ic_media_play);
         setElapsedTime(trackPosition);
@@ -408,7 +392,7 @@ public class MediaPlayerDialog extends DialogFragment
                                 getActivity().startService(startServiceIntent);
                         }
                     } catch (InterruptedException ie) {
-                        Log.i(LOG_TAG, ie.getMessage());
+                        Log.d(LOG_TAG, ie.getMessage());
                     }
                 }
             }

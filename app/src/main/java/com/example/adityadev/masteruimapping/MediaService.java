@@ -23,6 +23,7 @@ import com.example.adityadev.masteruimapping.toptracks.Tracks;
 import com.squareup.picasso.Picasso;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 public class MediaService extends Service
@@ -36,10 +37,13 @@ public class MediaService extends Service
     //Track preview URL
     String musicUrl;
 
+    //Track name
+    String currentTrackName = "";
+
     int currentPositionInTrack;
 
     //song list
-    public List<Tracks> tracksList;
+    public List<Tracks> listOfTracks;
     //current position
     private int songPosn;
     private Tracks currentTrack;
@@ -55,7 +59,7 @@ public class MediaService extends Service
     private NotificationCompat.Builder notifCompatBuilder;
 
     public MediaService() {
-
+        listOfTracks = new ArrayList<Tracks>();
     }
 
 
@@ -214,7 +218,6 @@ public class MediaService extends Service
                 }
             }
         };
-
     }
 
     public void initSpotifyPlayer() {
@@ -246,56 +249,81 @@ public class MediaService extends Service
 
         if (null != baseIntent && baseIntent.getAction().equals(getString(R.string.ACTION_PLAY))) {
 
-            tracksList = baseIntent.getParcelableArrayListExtra(getString(R.string.track_list_key));
+            listOfTracks = baseIntent.getParcelableArrayListExtra(getString(R.string.track_list_key));
             position = baseIntent.getIntExtra(getString(R.string.track_position_key), -1);
             currentPositionInTrack = baseIntent.getIntExtra(getString(R.string.elapsed_time), 0);
 
-            if (position > -1 && null != tracksList && tracksList.size() > 0) {
-                currentTrack = tracksList.get(position);
+            if (position > -1 && null != listOfTracks && listOfTracks.size() > 0) {
+                currentTrack = listOfTracks.get(position);
                 if (null != currentTrack) {
                     musicUrl = currentTrack.getPreviewUrl();
+                    currentTrackName = currentTrack.getTrackName();
                 }
             } else {
                 Log.d(LOG_TAG, "Empty current track");
             }
-            initSpotifyPlayer();
-            if (null != musicUrl && !musicUrl.isEmpty()) {
-                if (spotifyPlayer.isPlaying()) {
-                    spotifyPlayer.stop();
+
+            if (null == spotifyPlayer) {
+                initSpotifyPlayer();
+                if (null != musicUrl && !musicUrl.isEmpty()) {
+                    if (spotifyPlayer.isPlaying()) {
+                        spotifyPlayer.stop();
+                    }
+                    spotifyPlayer.reset();
+                    startStreamingMusic(musicUrl);
+                    remoteNotificationView = new RemoteViews(getPackageName(), R.layout.notification_layout);
+
+                    SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+
+                    if (sharedPreferences.getBoolean(getString(R.string.lock_screen_controls),true)){
+                        isNotifControlVisible = Notification.VISIBILITY_PUBLIC;
+                    } else {
+                        isNotifControlVisible = Notification.VISIBILITY_PRIVATE;
+                    }
+
+                    notifManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+                    NotificationCompat.Builder builder = new NotificationCompat.Builder(this);
+                    builder.setSmallIcon(R.drawable.notification_template_icon_bg)
+                            .setContentIntent(pendingListIntent)
+                            .setContent(remoteNotificationView)
+                            .setOngoing(true)
+                            .setVisibility(isNotifControlVisible);
+                    notif = builder.build();
+                    startForeground(NOTIFICATION_ID, notif);
+
+                    remoteNotificationView.setOnClickPendingIntent(R.id.prev_btn, pendingPrevListIntent);
+                    remoteNotificationView.setOnClickPendingIntent(R.id.play_btn, pendingPlayIntent);
+                    remoteNotificationView.setOnClickPendingIntent(R.id.next_btn, pendingNextListIntent);
                 }
-                spotifyPlayer.reset();
-                startStreamingMusic();
+            } else {
+                if (!musicUrl.isEmpty()){
+                    if(spotifyPlayer.isPlaying()){
+                        spotifyPlayer.stop();
+                    }
+                    spotifyPlayer.reset();
+                    try {
+                        spotifyPlayer.setDataSource(musicUrl);
+                    } catch (IOException ie) {
+                        Log.i(LOG_TAG,ie.getMessage());
+                    }
+                    startStreamingMusic(musicUrl);
+                }
             }
-            remoteNotificationView = new RemoteViews(getPackageName(), R.layout.notification_layout);
-
-
-            notifManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-            int notificationLockScreenVisibility = Notification.VISIBILITY_PUBLIC;
-            NotificationCompat.Builder builder = new NotificationCompat.Builder(this);
-            builder.setSmallIcon(R.drawable.notification_template_icon_bg)
-                    .setContentIntent(pendingListIntent)
-                    .setContent(remoteNotificationView)
-                    .setOngoing(true)
-                    .setVisibility(notificationLockScreenVisibility);
-            notif = builder.build();
-            startForeground(NOTIFICATION_ID, notif);
-            remoteNotificationView.setOnClickPendingIntent(R.id.prev_btn, pendingPrevListIntent);
-            remoteNotificationView.setOnClickPendingIntent(R.id.play_btn, pendingPlayIntent);
-            remoteNotificationView.setOnClickPendingIntent(R.id.next_btn, pendingNextListIntent);
         } else if (null != baseIntent && baseIntent.getAction().equals(getString(R.string.ACTION_PREV))) {
             if (spotifyPlayer.isPlaying()) {
                 spotifyPlayer.stop();
             }
             remoteNotificationView.setImageViewResource(R.id.play_btn, android.R.drawable.ic_media_play);
             notifManager.notify(NOTIFICATION_ID, notif);
-            if (position > 0 && null != tracksList && tracksList.size() > 0) {
+            if (position > 0 && null != listOfTracks && listOfTracks.size() > 0) {
                 position--;
-                currentTrack = tracksList.get(position);
+                currentTrack = listOfTracks.get(position);
                 musicUrl = currentTrack.getPreviewUrl();
-                startStreamingMusic();
+                startStreamingMusic(musicUrl);
 
                 if (null != mediaPlayerControlInterfaceObj) {
                     mediaPlayerControlInterfaceObj.onPreviousTrack();
+                    mediaPlayerControlInterfaceObj.setTrackNo(position);
                 }
             }
         } else if (null != baseIntent && baseIntent.getAction().equals(getString(R.string.ACTION_NEXT))) {
@@ -304,14 +332,15 @@ public class MediaService extends Service
             }
             remoteNotificationView.setImageViewResource(R.id.play_btn, android.R.drawable.ic_media_play);
             notifManager.notify(NOTIFICATION_ID, notif);
-            if (null != tracksList && tracksList.size() > 0 && position < tracksList.size() - 1) {
+            if (null != listOfTracks && listOfTracks.size() > 0 && position < listOfTracks.size() - 1) {
                 position++;
-                currentTrack = tracksList.get(position);
+                currentTrack = listOfTracks.get(position);
                 musicUrl = currentTrack.getPreviewUrl();
-                startStreamingMusic();
+                startStreamingMusic(musicUrl);
 
                 if (null != mediaPlayerControlInterfaceObj) {
                     mediaPlayerControlInterfaceObj.onNextTrack();
+                    mediaPlayerControlInterfaceObj.setTrackNo(position);
                 }
             }
         } else if (null != baseIntent && baseIntent.getAction().equals(getString(R.string.ACTION_PLAY_PAUSE))) {
@@ -328,6 +357,7 @@ public class MediaService extends Service
                 if (null != mediaPlayerControlInterfaceObj) {
                     mediaPlayerControlInterfaceObj.onTrackResumed();
                 }
+                notifManager.notify(NOTIFICATION_ID, notif);
             }
 
         } else if (null != baseIntent && baseIntent.getAction().equals(getString(R.string.ACTION_SEEKBAR_POS_CHANGED))) {
@@ -346,7 +376,7 @@ public class MediaService extends Service
                     mediaPlayerControlInterfaceObj.isSpotifyPlayerOn(true);
                     mediaPlayerControlInterfaceObj.setElapsedTime(spotifyPlayer.getCurrentPosition());
                     mediaPlayerControlInterfaceObj.setTrackDuration(spotifyPlayer.getDuration());
-                    mediaPlayerControlInterfaceObj.setTrackList(tracksList);
+                    mediaPlayerControlInterfaceObj.setTrackList(listOfTracks);
                     mediaPlayerControlInterfaceObj.setTrackNo(songPosn);
                     mediaPlayerControlInterfaceObj.isSpotifyPlayerPaused(spotifyPlayer.isPlaying());
                 } else {
@@ -358,13 +388,19 @@ public class MediaService extends Service
         return super.onStartCommand(baseIntent, flags, startId);
     }
 
-    private void startStreamingMusic() {
+    private void startStreamingMusic(String musicUrl) {
         if (null != spotifyPlayer) {
+            if (spotifyPlayer.isPlaying()){
+                spotifyPlayer.stop();
+            }
             spotifyPlayer.reset();
             try {
-                spotifyPlayer.setDataSource(musicUrl);
+                if(!musicUrl.isEmpty()){
+                    spotifyPlayer.setDataSource(musicUrl);
+                }
                 spotifyPlayer.prepareAsync(); // prepare async to not block main thread
             } catch (IOException e) {
+                Log.d(LOG_TAG, e.getMessage());
                 Log.d(LOG_TAG, "Exception during setting data source. Music url is not empty");
             }
         }
@@ -378,11 +414,12 @@ public class MediaService extends Service
 
     @Override
     public void onCompletion(MediaPlayer spotifyPlayer) {
+        mTrackEventListenerObj.onTrackCompleted();
         if (null != mediaPlayerControlInterfaceObj)
             mediaPlayerControlInterfaceObj.onTrackCompleted();
         if (null != this.spotifyPlayer)
             this.spotifyPlayer.release();
-        spotifyPlayer = null;
+        this.spotifyPlayer = null;
         stopForeground(true);
     }
 
@@ -402,6 +439,12 @@ public class MediaService extends Service
         if (null != mediaPlayerControlInterfaceObj) {
             mediaPlayerControlInterfaceObj.setTrackDuration(spotifyPlayer.getDuration());
             mediaPlayerControlInterfaceObj.onTrackStarted();
+            mediaPlayerControlInterfaceObj.isSpotifyPlayerOn(true);
+            mediaPlayerControlInterfaceObj.setElapsedTime(spotifyPlayer.getCurrentPosition());
+            mediaPlayerControlInterfaceObj.setTrackDuration(spotifyPlayer.getDuration());
+            mediaPlayerControlInterfaceObj.setTrackList(listOfTracks);
+            mediaPlayerControlInterfaceObj.setTrackNo(listOfTracks.indexOf(currentTrack));
+            mediaPlayerControlInterfaceObj.isSpotifyPlayerPaused(false);
         }
 
         remoteNotificationView.setImageViewResource(R.id.play_btn, android.R.drawable.ic_media_pause);
@@ -421,9 +464,9 @@ public class MediaService extends Service
 
     @Override
     public void onDestroy() {
-        super.onDestroy();
         if (null != mediaPlayerControlInterfaceObj) {
             mediaPlayerControlInterfaceObj = dummyMediaPlayerControlInterfaceObj;
         }
+        super.onDestroy();
     }
 }

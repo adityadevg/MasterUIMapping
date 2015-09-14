@@ -1,13 +1,21 @@
 package com.example.adityadev.masteruimapping;
 
+import android.app.ActivityManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.support.v4.app.FragmentManager;
+import android.support.v4.app.NavUtils;
+import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.ShareActionProvider;
+import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 
 import com.example.adityadev.masteruimapping.artistsmodel.Artist;
 import com.example.adityadev.masteruimapping.toptracks.Tracks;
@@ -56,7 +64,7 @@ public class MainArtistActivity extends AppCompatActivity
         broadcastReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                if(intent.getAction().equals(getString(R.string.ACTION_NOW_PLAYING))){
+                if (intent.getAction().equals(getString(R.string.ACTION_NOW_PLAYING))) {
 
                 }
             }
@@ -104,12 +112,8 @@ public class MainArtistActivity extends AppCompatActivity
     @Override
     public void onTopTrackSelected(List<Tracks> listOfTracksForPlayer, int selectedTrackPosition) {
         if (mTwoPane) {
-            mediaPlayerDialog = new MediaPlayerDialog();
-            Bundle arguments = new Bundle();
-            arguments.putParcelableArrayList(getString(R.string.track_list_key), (ArrayList<? extends Parcelable>) listOfTracksForPlayer);
-            arguments.putInt(getString(R.string.track_position_key), selectedTrackPosition);
-            mediaPlayerDialog.setArguments(arguments);
-            MediaService.setMediaControlInterfaceObj(mediaPlayerDialog);
+            //To avoid implementing the interface from Media Service, create a method within Media Player Dialog
+            mediaPlayerDialog.setMediaPlayerDialogObj(listOfTracksForPlayer, selectedTrackPosition);
             mediaPlayerDialog.show(fragmentManager, getString(R.string.fragment_media_player));
 
         } else {
@@ -134,4 +138,69 @@ public class MainArtistActivity extends AppCompatActivity
 
         this.externalURL = "";
     }
+
+    private Intent createPreviewShareIntent() {
+        Intent previewShareIntent = new Intent(Intent.ACTION_SEND);
+        previewShareIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        previewShareIntent.setType(getString(R.string.text_plain));
+        previewShareIntent.putExtra(Intent.EXTRA_TEXT, externalURL);
+        Log.i("External Spotify Link: ", externalURL);
+        return previewShareIntent;
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_media, menu);
+        MenuItem shareMenuItem = menu.findItem(R.id.action_share);
+        MenuItem nowPlayingMenuItem = menu.findItem(R.id.action_now_playing);
+
+        ShareActionProvider mShareActionProvider = (ShareActionProvider) MenuItemCompat.getActionProvider((shareMenuItem));
+        if (null != mShareActionProvider) {
+            mShareActionProvider.setShareIntent(createPreviewShareIntent());
+        }
+        if (isServiceRunning()) {
+            shareMenuItem.setVisible(false);
+            nowPlayingMenuItem.setVisible(false);
+        }
+        return true;
+    }
+
+    public boolean isServiceRunning() {
+        List<ActivityManager.RunningServiceInfo> currentServiceList = ((ActivityManager) this.getSystemService(Context.ACTIVITY_SERVICE)).getRunningServices(Integer.MAX_VALUE);
+        for (ActivityManager.RunningServiceInfo currentService : currentServiceList) {
+            if (currentService.service.getClassName().equals(MediaService.class.getName())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem menuItem) {
+        switch (menuItem.getItemId()) {
+            case android.R.id.home:
+                NavUtils.navigateUpFromSameTask(this);
+                return true;
+            case R.id.action_settings:
+                Intent settingsActivityIntent = new Intent(getApplicationContext(), SettingsActivity.class);
+                startActivity(settingsActivityIntent);
+                return true;
+
+
+            case R.id.action_now_playing:
+                if (isServiceRunning()) {
+                    if (mTwoPane) {
+                        if (null != mediaPlayerDialog)
+                            mediaPlayerDialog.show(fragmentManager, getString(R.string.fragment_media_player));
+                    } else {
+                        Intent mediaPlayerIntent = new Intent(this, MediaPlayer.class);
+                        startActivity(mediaPlayerIntent);
+                    }
+                }
+                return true;
+        }
+        return super.onOptionsItemSelected(menuItem);
+    }
+
+
 }
