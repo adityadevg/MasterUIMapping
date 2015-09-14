@@ -1,4 +1,4 @@
-package com.example.adityadev.masteruimapping;
+package com.example.adityadev.spotifystreamermasterui;
 
 /**
  * Created by adityadev on 9/13/2015.

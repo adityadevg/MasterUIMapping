@@ -1,4 +1,4 @@
-package com.example.adityadev.masteruimapping;
+package com.example.adityadev.spotifystreamermasterui;
 
 import android.content.Intent;
 import android.content.SharedPreferences;

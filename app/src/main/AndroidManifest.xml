@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.adityadev.masteruimapping" >
+    package="com.example.adityadev.spotifystreamermasterui" >
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
@@ -11,7 +11,7 @@
         android:label="@string/app_name"
         android:theme="@style/AppTheme" >
         <activity
-            android:name=".MainArtistActivity"
+            android:name="com.example.adityadev.spotifystreamermasterui.MainArtistActivity"
             android:label="@string/app_name" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -20,25 +20,25 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".TopTracksActivity"
+            android:name="com.example.adityadev.spotifystreamermasterui.TopTracksActivity"
             android:label="@string/title_activity_top_tracks"
-            android:parentActivityName=".MainArtistActivity" >
+            android:parentActivityName="com.example.adityadev.spotifystreamermasterui.MainArtistActivity" >
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value=".MainArtistActivity" />
+                android:value="com.example.adityadev.spotifystreamermasterui.MainArtistActivity" />
         </activity>
         <activity
-            android:name=".MediaPlayerActivity"
+            android:name="com.example.adityadev.spotifystreamermasterui.MediaPlayerActivity"
             android:label="@string/title_activity_media"
-            android:parentActivityName=".TopTracksActivity">
+            android:parentActivityName="com.example.adityadev.spotifystreamermasterui.TopTracksActivity">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value=".TopTracksActivity" />
+                android:value="com.example.adityadev.spotifystreamermasterui.TopTracksActivity" />
         </activity>
-        <activity android:name=".SettingsActivity" />
+        <activity android:name="com.example.adityadev.spotifystreamermasterui.SettingsActivity" />
 
         <service
-            android:name=".MediaService"
+            android:name="com.example.adityadev.spotifystreamermasterui.MediaService"
             android:enabled="true"
             android:exported="true"></service>
     </application>

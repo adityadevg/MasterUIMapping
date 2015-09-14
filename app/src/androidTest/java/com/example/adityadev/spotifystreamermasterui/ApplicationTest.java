@@ -1,4 +1,4 @@
-package com.example.adityadev.masteruimapping;
+package com.example.adityadev.spotifystreamermasterui;
 
 import android.app.Application;
 import android.test.ApplicationTestCase;

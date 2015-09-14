@@ -1,4 +1,4 @@
-package com.example.adityadev.masteruimapping;
+package com.example.adityadev.spotifystreamermasterui;
 
 import android.app.ActivityManager;
 import android.content.BroadcastReceiver;
@@ -13,12 +13,11 @@ import android.support.v4.app.NavUtils;
 import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.ShareActionProvider;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
-import com.example.adityadev.masteruimapping.artistsmodel.Artist;
-import com.example.adityadev.masteruimapping.toptracks.Tracks;
+import com.example.adityadev.spotifystreamermasterui.artistsmodel.Artist;
+import com.example.adityadev.spotifystreamermasterui.toptracks.Tracks;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -112,8 +111,9 @@ public class MainArtistActivity extends AppCompatActivity
     @Override
     public void onTopTrackSelected(List<Tracks> listOfTracksForPlayer, int selectedTrackPosition) {
         if (mTwoPane) {
+
             //To avoid implementing the interface from Media Service, create a method within Media Player Dialog
-            mediaPlayerDialog.setMediaPlayerDialogObj(listOfTracksForPlayer, selectedTrackPosition);
+            mediaPlayerDialog = MediaPlayerDialog.setMediaPlayerDialogObj(listOfTracksForPlayer, selectedTrackPosition);
             mediaPlayerDialog.show(fragmentManager, getString(R.string.fragment_media_player));
 
         } else {
@@ -144,7 +144,6 @@ public class MainArtistActivity extends AppCompatActivity
         previewShareIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
         previewShareIntent.setType(getString(R.string.text_plain));
         previewShareIntent.putExtra(Intent.EXTRA_TEXT, externalURL);
-        Log.i("External Spotify Link: ", externalURL);
         return previewShareIntent;
     }
 

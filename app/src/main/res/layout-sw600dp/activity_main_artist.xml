@@ -18,7 +18,7 @@
 
     <fragment
         android:id="@+id/fragment_artist_list"
-        android:name="com.example.adityadev.masteruimapping.MainArtistActivityFragment"
+        android:name="com.example.adityadev.spotifystreamermasterui.MainArtistActivityFragment"
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:layout_weight="1"

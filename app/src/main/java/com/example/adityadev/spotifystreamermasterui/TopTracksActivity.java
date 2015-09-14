@@ -1,4 +1,4 @@
-package com.example.adityadev.masteruimapping;
+package com.example.adityadev.spotifystreamermasterui;
 
 import android.os.Parcelable;
 import android.support.v7.app.AppCompatActivity;
@@ -7,7 +7,7 @@ import android.os.Bundle;
 import android.support.v4.app.NavUtils;
 import android.view.MenuItem;
 
-import com.example.adityadev.masteruimapping.toptracks.Tracks;
+import com.example.adityadev.spotifystreamermasterui.toptracks.Tracks;
 
 import java.util.ArrayList;
 import java.util.List;

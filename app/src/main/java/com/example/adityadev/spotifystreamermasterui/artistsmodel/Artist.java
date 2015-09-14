@@ -1,4 +1,4 @@
-package com.example.adityadev.masteruimapping.artistsmodel;
+package com.example.adityadev.spotifystreamermasterui.artistsmodel;
 
 import android.os.Parcel;
 import android.os.Parcelable;

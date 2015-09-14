@@ -1,11 +1,10 @@
-package com.example.adityadev.masteruimapping;
+package com.example.adityadev.spotifystreamermasterui;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Parcelable;
-import android.support.v4.app.DialogFragment;
+import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -18,7 +17,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
-import com.example.adityadev.masteruimapping.toptracks.Tracks;
+import com.example.adityadev.spotifystreamermasterui.toptracks.Tracks;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
@@ -28,7 +27,7 @@ import java.util.List;
 /**
  * A placeholder fragment containing a simple view.
  */
-public class MediaPlayerDialog extends DialogFragment
+public class MediaPlayerActivityFragment extends Fragment
         implements MediaService.MediaPlayerControlInterface {
 
     private static final int IMG_SIZE = 600;
@@ -57,36 +56,29 @@ public class MediaPlayerDialog extends DialogFragment
     private SeekBar seekBar;
     private ToggleButton notificationsToggleMenu;
 
-    public MediaPlayerDialog() {
-    }
-
-    public MediaPlayerDialog setMediaPlayerDialogObj(List<Tracks> listOfTracksForPlayer, int selectedTrackPosition) {
-        MediaPlayerDialog mediaPlayerDialogObj = new MediaPlayerDialog();
-        Bundle arguments = new Bundle();
-        arguments.putParcelableArrayList(getString(R.string.track_list_key), (ArrayList<? extends Parcelable>) listOfTracksForPlayer);
-        arguments.putInt(getString(R.string.track_position_key), selectedTrackPosition);
-        mediaPlayerDialogObj.setArguments(arguments);
-        MediaService.setMediaControlInterfaceObj(mediaPlayerDialogObj);
-        return mediaPlayerDialogObj;
+    public MediaPlayerActivityFragment() {
+        setHasOptionsMenu(true);
+        MediaService.setMediaControlInterfaceObj(this);
     }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (null != getArguments() && getArguments().containsKey(getString(R.string.track_list_key)) && getArguments().containsKey(getString(R.string.track_number_key))) {
-            listOfTracks = getArguments().getParcelableArrayList(getString(R.string.track_list_key));
-            position = getArguments().getInt(getString(R.string.track_number_key));
-            Intent mediaServiceIntent = new Intent(getActivity(), MediaService.class);
-            mediaServiceIntent.putParcelableArrayListExtra(getString(R.string.track_list_key), (ArrayList<? extends Parcelable>) listOfTracks);
-            mediaServiceIntent.putExtra(getString(R.string.track_number_key), position);
-            mediaServiceIntent.setAction(getString(R.string.ACTION_NOW_PLAYING));
-            getActivity().startService(mediaServiceIntent);
-        }
+        Intent mediaServiceIntent = new Intent(getActivity(), MediaService.class);
+        mediaServiceIntent.putParcelableArrayListExtra(getString(R.string.bundle_track_list_key), (ArrayList<? extends Parcelable>) listOfTracks);
+        mediaServiceIntent.putExtra(getString(R.string.track_position_key), position);
+        mediaServiceIntent.setAction(getString(R.string.ACTION_NOW_PLAYING));
+        getActivity().startService(mediaServiceIntent);
     }
 
     @Override
     public void onStart() {
         super.onStart();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
     }
 
     /**
@@ -112,22 +104,6 @@ public class MediaPlayerDialog extends DialogFragment
      */
     private static MediaPlayerCallbacksInterface mMediaPlayerCallbacksInterface = sDummyMediaPlayerCallbacksInterface;
 
-    @Override
-    public void onAttach(Activity activity) {
-        super.onAttach(activity);
-        // Activities containing this fragment must implement its callbacks.
-        if (!(activity instanceof MediaPlayerCallbacksInterface)) {
-            throw new IllegalStateException(getString(R.string.activity_must_implement_fragments_callbacks));
-        }
-        mMediaPlayerCallbacksInterface = (MediaPlayerCallbacksInterface) activity;
-    }
-
-    @Override
-    public void onDetach() {
-        super.onDetach();
-        mMediaPlayerCallbacksInterface = sDummyMediaPlayerCallbacksInterface;
-    }
-
 
     public static void setMediaPlayerCallbackInterface(MediaPlayerCallbacksInterface mediaPlayerCallbacksInterface) {
         mMediaPlayerCallbacksInterface = mediaPlayerCallbacksInterface;
@@ -139,8 +115,13 @@ public class MediaPlayerDialog extends DialogFragment
         bundle.putInt(getString(R.string.bundle_track_number_key), currentPosition);
         bundle.putParcelable(getString(R.string.current_track_key), currentTrack);
 
+        bundle.putBoolean(getString(R.string.is_track_playing_key), isTrackPlaying);
+        bundle.putInt(getString(R.string.track_time_key), trackPosition);
+        bundle.putInt(getString(R.string.track_duration_key), trackDuration);
+
         super.onSaveInstanceState(bundle);
     }
+
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -173,7 +154,7 @@ public class MediaPlayerDialog extends DialogFragment
                     playPauseTrack_ib.setImageResource(android.R.drawable.ic_media_pause);
                     if (trackPosition == trackDuration && trackPosition > 0) {
                         Intent baseIntent = getActivity().getIntent();
-                        listOfTracks = baseIntent.getParcelableArrayListExtra(getString(R.string.track_list_key));
+                        listOfTracks = baseIntent.getParcelableArrayListExtra(getString(R.string.bundle_track_list_key));
                         currentPosition = baseIntent.getIntExtra(getString(R.string.track_position_key), -1);
                         currentTrack = listOfTracks.get(currentPosition);
                         Intent startServiceIntent = new Intent(getActivity(), MediaService.class);
@@ -228,7 +209,7 @@ public class MediaPlayerDialog extends DialogFragment
                     listOfTracks = baseIntent.getParcelableArrayListExtra(getString(R.string.bundle_track_list_key));
                     currentPosition = baseIntent.getIntExtra(getString(R.string.track_position_key), -1);
                     Intent mediaServiceIntent = new Intent(getActivity(), MediaService.class);
-                    mediaServiceIntent.putParcelableArrayListExtra(getString(R.string.track_list_key), (ArrayList<? extends Parcelable>) listOfTracks);
+                    mediaServiceIntent.putParcelableArrayListExtra(getString(R.string.bundle_track_list_key), (ArrayList<? extends Parcelable>) listOfTracks);
                     mediaServiceIntent.putExtra(getString(R.string.track_position_key), currentPosition);
                     mediaServiceIntent.putExtra(getString(R.string.Seekbar_Current_Position), seekBar.getProgress());
                     mediaServiceIntent.setAction(getString(R.string.ACTION_PLAY));
@@ -245,10 +226,11 @@ public class MediaPlayerDialog extends DialogFragment
 
         if (!isServiceOn) {
             if (savedInstanceState == null || !savedInstanceState.containsKey(getString(R.string.bundle_track_list_key))) {
-                listOfTracks = getArguments().getParcelableArrayList(getString(R.string.track_list_key));
-                currentPosition = getArguments().getInt(getString(R.string.track_position_key), -1);
+                Intent baseIntent = getActivity().getIntent();
+                listOfTracks = baseIntent.getParcelableArrayListExtra(getString(R.string.bundle_track_list_key));
+                currentPosition = baseIntent.getIntExtra(getString(R.string.track_position_key), -1);
                 Intent mediaServiceIntent = new Intent(getActivity(), MediaService.class);
-                mediaServiceIntent.putParcelableArrayListExtra(getString(R.string.track_list_key), (ArrayList<? extends Parcelable>) listOfTracks);
+                mediaServiceIntent.putParcelableArrayListExtra(getString(R.string.bundle_track_list_key), (ArrayList<? extends Parcelable>) listOfTracks);
                 mediaServiceIntent.putExtra(getString(R.string.track_position_key), currentPosition);
                 mediaServiceIntent.setAction(getString(R.string.ACTION_PLAY));
                 getActivity().startService(mediaServiceIntent);
@@ -256,7 +238,13 @@ public class MediaPlayerDialog extends DialogFragment
                 listOfTracks = savedInstanceState.getParcelableArrayList(getString(R.string.bundle_track_list_key));
                 currentPosition = savedInstanceState.getInt(getString(R.string.bundle_track_number_key), -1);
                 currentTrack = savedInstanceState.getParcelable(getString(R.string.current_track_key));
+                trackDuration = savedInstanceState.getInt(getString(R.string.track_duration_key));
+                trackPosition = savedInstanceState.getByte(getString(R.string.track_time_key));
+                isTrackPlaying = savedInstanceState.getBoolean(getString(R.string.is_track_playing_key));
 
+                Intent mediaServiceIntent = new Intent(getActivity(), MediaService.class);
+                mediaServiceIntent.setAction(getString(R.string.ACTION_NOW_PLAYING));
+                getActivity().startService(mediaServiceIntent);
             }
 
             if (null != listOfTracks && listOfTracks.size() > 0) {
@@ -306,7 +294,6 @@ public class MediaPlayerDialog extends DialogFragment
 
     @Override
     public void onTrackCompleted() {
-        mMediaPlayerCallbacksInterface.onSelectedTrackCompleted();
         trackPosition = trackDuration;
         playPauseTrack_ib.setImageResource(android.R.drawable.ic_media_play);
         setElapsedTime(trackPosition);
@@ -317,11 +304,11 @@ public class MediaPlayerDialog extends DialogFragment
         trackDuration = duration;
         seekBar.setMax(duration);
         if (isAdded())
-            trackDuration_tv.setText(convDurationToMinutes(duration));
+            trackDuration_tv.setText(getDurationInMinutes(duration));
     }
 
 
-    private String convDurationToMinutes(int duration) {
+    private String getDurationInMinutes(int duration) {
 
         int durationInSeconds = duration / MILLIS;
         int minutes = durationInSeconds / SECS;
@@ -334,7 +321,7 @@ public class MediaPlayerDialog extends DialogFragment
     public void setElapsedTime(int elapsedTime) {
         trackPosition = position;
         seekBar.setProgress(trackPosition);
-        elapsedTime_tv.setText(convDurationToMinutes(trackPosition));
+        elapsedTime_tv.setText(getDurationInMinutes(trackPosition));
         refreshScreen();
     }
 
@@ -392,7 +379,7 @@ public class MediaPlayerDialog extends DialogFragment
                                 getActivity().startService(startServiceIntent);
                         }
                     } catch (InterruptedException ie) {
-                        Log.d(LOG_TAG, ie.getMessage());
+                        Log.i(LOG_TAG, ie.getMessage());
                     }
                 }
             }

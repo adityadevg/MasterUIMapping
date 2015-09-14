@@ -1,4 +1,4 @@
-package com.example.adityadev.masteruimapping.toptracks;
+package com.example.adityadev.spotifystreamermasterui.toptracks;
 
 import android.os.Parcel;
 import android.os.Parcelable;

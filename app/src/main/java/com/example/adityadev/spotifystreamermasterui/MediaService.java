@@ -1,4 +1,4 @@
-package com.example.adityadev.masteruimapping;
+package com.example.adityadev.spotifystreamermasterui;
 
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -19,7 +19,7 @@ import android.support.v7.app.NotificationCompat;
 import android.util.Log;
 import android.widget.RemoteViews;
 
-import com.example.adityadev.masteruimapping.toptracks.Tracks;
+import com.example.adityadev.spotifystreamermasterui.toptracks.Tracks;
 import com.squareup.picasso.Picasso;
 
 import java.io.IOException;

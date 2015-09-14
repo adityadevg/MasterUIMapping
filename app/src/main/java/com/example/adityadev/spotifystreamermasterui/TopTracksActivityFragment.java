@@ -1,4 +1,4 @@
-package com.example.adityadev.masteruimapping;
+package com.example.adityadev.spotifystreamermasterui;
 
 import android.app.Activity;
 import android.app.Fragment;
@@ -14,9 +14,9 @@ import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.Toast;
 
-import com.example.adityadev.masteruimapping.artistsmodel.Artist;
-import com.example.adityadev.masteruimapping.toptracks.Tracks;
-import com.example.adityadev.masteruimapping.toptracks.TracksArrayAdapter;
+import com.example.adityadev.spotifystreamermasterui.artistsmodel.Artist;
+import com.example.adityadev.spotifystreamermasterui.toptracks.Tracks;
+import com.example.adityadev.spotifystreamermasterui.toptracks.TracksArrayAdapter;
 
 import java.util.ArrayList;
 import java.util.HashMap;
