@@ -18,6 +18,7 @@ import android.preference.PreferenceManager;
 import android.support.v7.app.NotificationCompat;
 import android.util.Log;
 import android.widget.RemoteViews;
+import android.widget.Toast;
 
 import com.example.adityadev.spotifystreamermasterui.toptracks.Tracks;
 import com.squareup.picasso.Picasso;
@@ -32,7 +33,7 @@ public class MediaService extends Service
     private static final int NOTIFICATION_ID = 7;
 
     //media player
-    private MediaPlayer spotifyPlayer = null;
+    private MediaPlayer spotifyPlayer;
 
     //Track preview URL
     String musicUrl;
@@ -46,7 +47,7 @@ public class MediaService extends Service
     public List<Tracks> listOfTracks;
     //current position
     private int songPosn;
-    private Tracks currentTrack;
+    public static Tracks currentTrack;
     private int position;
     RemoteViews remoteNotificationView;
 
@@ -202,6 +203,7 @@ public class MediaService extends Service
     @Override
     public void onCreate() {
         super.onCreate();
+        initSpotifyPlayer();
 
         broadcastReceiver = new BroadcastReceiver() {
             @Override
@@ -296,7 +298,7 @@ public class MediaService extends Service
                     remoteNotificationView.setOnClickPendingIntent(R.id.next_btn, pendingNextListIntent);
                 }
             } else {
-                if (!musicUrl.isEmpty()){
+                if (null != musicUrl && !musicUrl.isEmpty()){
                     if(spotifyPlayer.isPlaying()){
                         spotifyPlayer.stop();
                     }
@@ -335,8 +337,12 @@ public class MediaService extends Service
             if (null != listOfTracks && listOfTracks.size() > 0 && position < listOfTracks.size() - 1) {
                 position++;
                 currentTrack = listOfTracks.get(position);
-                musicUrl = currentTrack.getPreviewUrl();
-                startStreamingMusic(musicUrl);
+                if(null != musicUrl){
+                    musicUrl = currentTrack.getPreviewUrl();
+                    startStreamingMusic(musicUrl);
+                } else {
+                    Toast.makeText(getApplicationContext(), getString(R.string.reached_end_of_playlist), Toast.LENGTH_SHORT).show();
+                }
 
                 if (null != mediaPlayerControlInterfaceObj) {
                     mediaPlayerControlInterfaceObj.onNextTrack();
@@ -365,6 +371,7 @@ public class MediaService extends Service
             if (null != spotifyPlayer) {
                 spotifyPlayer.seekTo(seekBarProgress);
                 spotifyPlayer.start();
+
             }
         } else if (null != baseIntent && baseIntent.getAction().equals(getString(R.string.ACTION_SEEKBAR_PROGRESS))) {
             if (null != spotifyPlayer && null != mediaPlayerControlInterfaceObj) {

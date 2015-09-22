@@ -2,20 +2,25 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:padding="@dimen/one_dp">
+    android:layout_height="match_parent"
+    android:orientation="horizontal"
+    android:padding="@dimen/four_dp"
+    android:weightSum="1">
 
     <ImageView
         android:id="@+id/list_item_artists_imageview"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:maxWidth="@android:dimen/app_icon_size" />
+        android:layout_gravity="left"
+        android:layout_weight="0.2"
+        android:padding="@dimen/one_dp" />
 
     <TextView
         android:id="@+id/list_item_artists_textview"
         android:layout_width="fill_parent"
+        android:minHeight="@android:dimen/app_icon_size"
         android:layout_height="wrap_content"
-        android:gravity="center"
-        android:minHeight="@android:dimen/app_icon_size" />
+        android:layout_weight="0.8"
+        android:layout_gravity="right"
+        android:padding="@dimen/one_dp" />
 </LinearLayout>

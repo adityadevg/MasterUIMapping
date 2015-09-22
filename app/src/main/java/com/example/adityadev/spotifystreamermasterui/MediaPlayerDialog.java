@@ -282,8 +282,13 @@ public class MediaPlayerDialog extends DialogFragment
     }
 
     private void refreshScreen() {
-        if ((null != currentTrack.getAlbumImageURL()) && (!currentTrack.getAlbumImageURL().isEmpty())) {
-            Picasso.with(getActivity()).load(currentTrack.getAlbumImageURL()).resize(IMG_SIZE, IMG_SIZE).centerInside().into(albumImage_iv);
+        if (null != MediaService.currentTrack) {
+            if ((null != MediaService.currentTrack.getAlbumImageURL()) && (!MediaService.currentTrack.getAlbumImageURL().isEmpty())) {
+                Picasso.with(getActivity()).load(MediaService.currentTrack.getAlbumImageURL()).resize(IMG_SIZE, IMG_SIZE).centerInside().into(albumImage_iv);
+            }
+            artistName_tv.setText(MediaService.currentTrack.getArtistName());
+            albumName_tv.setText(MediaService.currentTrack.getAlbumName());
+            mediaTrackName_tv.setText(MediaService.currentTrack.getTrackName());
         }
     }
 
@@ -335,7 +340,7 @@ public class MediaPlayerDialog extends DialogFragment
 
     @Override
     public void setElapsedTime(int elapsedTime) {
-        trackPosition = position;
+        trackPosition = elapsedTime;
         seekBar.setProgress(trackPosition);
         elapsedTime_tv.setText(convDurationToMinutes(trackPosition));
         refreshScreen();

@@ -225,12 +225,12 @@ public class MediaPlayerActivityFragment extends Fragment
         });
 
         if (!isServiceOn) {
-            if (savedInstanceState == null || !savedInstanceState.containsKey(getString(R.string.bundle_track_list_key))) {
+            if (savedInstanceState == null || !savedInstanceState.containsKey(getString(R.string.track_list_key))) {
                 Intent baseIntent = getActivity().getIntent();
-                listOfTracks = baseIntent.getParcelableArrayListExtra(getString(R.string.bundle_track_list_key));
+                listOfTracks = baseIntent.getParcelableArrayListExtra(getString(R.string.track_list_key));
                 currentPosition = baseIntent.getIntExtra(getString(R.string.track_position_key), -1);
                 Intent mediaServiceIntent = new Intent(getActivity(), MediaService.class);
-                mediaServiceIntent.putParcelableArrayListExtra(getString(R.string.bundle_track_list_key), (ArrayList<? extends Parcelable>) listOfTracks);
+                mediaServiceIntent.putParcelableArrayListExtra(getString(R.string.track_list_key), (ArrayList<? extends Parcelable>) listOfTracks);
                 mediaServiceIntent.putExtra(getString(R.string.track_position_key), currentPosition);
                 mediaServiceIntent.setAction(getString(R.string.ACTION_PLAY));
                 getActivity().startService(mediaServiceIntent);
@@ -267,8 +267,13 @@ public class MediaPlayerActivityFragment extends Fragment
     }
 
     private void refreshScreen() {
-        if ((null != currentTrack.getAlbumImageURL()) && (!currentTrack.getAlbumImageURL().isEmpty())) {
-            Picasso.with(getActivity()).load(currentTrack.getAlbumImageURL()).resize(IMG_SIZE, IMG_SIZE).centerInside().into(albumImage_iv);
+        if (null != MediaService.currentTrack) {
+            if ((null != MediaService.currentTrack.getAlbumImageURL()) && (!MediaService.currentTrack.getAlbumImageURL().isEmpty())) {
+                Picasso.with(getActivity()).load(MediaService.currentTrack.getAlbumImageURL()).resize(IMG_SIZE, IMG_SIZE).centerInside().into(albumImage_iv);
+            }
+            artistName_tv.setText(MediaService.currentTrack.getArtistName());
+            albumName_tv.setText(MediaService.currentTrack.getAlbumName());
+            mediaTrackName_tv.setText(MediaService.currentTrack.getTrackName());
         }
     }
 
@@ -302,9 +307,9 @@ public class MediaPlayerActivityFragment extends Fragment
     @Override
     public void setTrackDuration(int duration) {
         trackDuration = duration;
-        seekBar.setMax(duration);
+        seekBar.setMax(trackDuration);
         if (isAdded())
-            trackDuration_tv.setText(getDurationInMinutes(duration));
+            trackDuration_tv.setText(getDurationInMinutes(trackDuration));
     }
 
 
@@ -319,7 +324,7 @@ public class MediaPlayerActivityFragment extends Fragment
 
     @Override
     public void setElapsedTime(int elapsedTime) {
-        trackPosition = position;
+        trackPosition = elapsedTime;
         seekBar.setProgress(trackPosition);
         elapsedTime_tv.setText(getDurationInMinutes(trackPosition));
         refreshScreen();
