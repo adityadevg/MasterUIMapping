@@ -1,49 +1,53 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="horizontal" android:layout_width="match_parent"
+    android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:weightSum="4"
-    android:background="#205776">
+    android:background="#6c7600"
+    android:orientation="horizontal">
 
     <ImageView
+        android:id="@+id/album_thumbnail_imageview"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:id="@+id/album_thumbnail_imageview"
+        android:layout_weight="1"
         android:src="@android:drawable/ic_lock_idle_lock" />
 
     <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-        android:orientation="vertical" android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:weightSum="1">
-
-    <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/trackName_tv" />
+        android:orientation="vertical"
+        android:layout_weight="1">
+
+        <TextView
+            android:id="@+id/trackName_tv"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
 
         <LinearLayout
-            android:orientation="horizontal"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
-            android:weightSum="3">
+            android:orientation="horizontal"
+            android:layout_weight="1">
 
             <ImageView
+                android:id="@+id/prev_btn"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:id="@+id/prev_btn"
                 android:layout_weight="1"
                 android:src="@android:drawable/ic_media_previous" />
+
             <ImageView
+                android:id="@+id/play_btn"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
-                android:id="@+id/play_btn"
                 android:layout_weight="1"
                 android:src="@android:drawable/ic_media_play" />
+
             <ImageView
+                android:id="@+id/next_btn"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
-                android:id="@+id/next_btn"
                 android:layout_weight="1"
                 android:src="@android:drawable/ic_media_next" />
         </LinearLayout>

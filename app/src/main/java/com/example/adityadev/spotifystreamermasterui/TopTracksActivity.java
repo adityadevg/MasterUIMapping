@@ -1,12 +1,13 @@
 package com.example.adityadev.spotifystreamermasterui;
 
-import android.os.Parcelable;
-import android.support.v7.app.AppCompatActivity;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.support.v4.app.NavUtils;
+import android.support.v7.app.AppCompatActivity;
 import android.view.MenuItem;
 
+import com.example.adityadev.spotifystreamermasterui.artistsmodel.Artist;
 import com.example.adityadev.spotifystreamermasterui.toptracks.Tracks;
 
 import java.util.ArrayList;
@@ -23,6 +24,8 @@ import java.util.List;
  */
 public class TopTracksActivity extends AppCompatActivity implements TopTracksActivityFragment.TopTracksCallbacksInterface{
 
+    private Artist selectedArtist;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -30,6 +33,12 @@ public class TopTracksActivity extends AppCompatActivity implements TopTracksAct
 
         // Show the Up button in the action bar.
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+
+        selectedArtist = getIntent().getParcelableExtra(getString(R.string.artist_key));
+        if (null != selectedArtist){
+            getSupportActionBar().setTitle(getString(R.string.title_activity_top_tracks));
+            getSupportActionBar().setTitle(selectedArtist.getArtistName());
+        }
 
         // savedInstanceState is non-null when there is topTracksActivityFragment state
         // saved from previous configurations of this activity
@@ -40,12 +49,12 @@ public class TopTracksActivity extends AppCompatActivity implements TopTracksAct
         //
         // http://developer.android.com/guide/components/fragments.html
         //
-        if (savedInstanceState == null) {
+        if (null == savedInstanceState) {
             // Create the detail topTracksActivityFragment and add it to the activity
             // using a topTracksActivityFragment transaction.
             Bundle arguments = new Bundle();
-            arguments.putParcelable(getString(R.string.artist_id),
-                    getIntent().getParcelableExtra(getString(R.string.artist_id)));
+            arguments.putParcelable(getString(R.string.artist_key),
+                    getIntent().getParcelableExtra(getString(R.string.artist_key)));
             TopTracksActivityFragment fragment = new TopTracksActivityFragment();
             fragment.setArguments(arguments);
             getFragmentManager().beginTransaction()

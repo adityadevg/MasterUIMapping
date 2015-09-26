@@ -5,7 +5,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.support.v4.app.FragmentManager;
@@ -39,6 +38,7 @@ import java.util.List;
 public class MainArtistActivity extends AppCompatActivity
         implements MainArtistActivityFragment.ArtistCallbacksInterface,
         TopTracksActivityFragment.TopTracksCallbacksInterface,
+        MediaService.TrackEventListenerInterface,
         MediaPlayerCallbacksInterface {
 
     /**
@@ -51,6 +51,10 @@ public class MainArtistActivity extends AppCompatActivity
     private MediaPlayerDialog mediaPlayerDialog;
     private BroadcastReceiver broadcastReceiver;
     private String externalURL;
+    private ShareActionProvider shareActionProvider;
+    protected MenuItem shareMenuItem;
+    protected MenuItem nowPlayingMenuItem;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,13 +62,13 @@ public class MainArtistActivity extends AppCompatActivity
         setContentView(R.layout.activity_main_artist);
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(getString(R.string.ACTION_NOW_PLAYING));
-        intentFilter.addAction(getString(R.string.MISC_ACTION));
 
         broadcastReceiver = new BroadcastReceiver() {
             @Override
-            public void onReceive(Context context, Intent intent) {
-                if (intent.getAction().equals(getString(R.string.ACTION_NOW_PLAYING))) {
-
+            public void onReceive(Context context, Intent baseIntent) {
+                if (baseIntent.getAction().equals(getString(R.string.ACTION_NOW_PLAYING))) {
+                    externalURL = baseIntent.getStringExtra(getString(R.string.spotify_external_url));
+                    setNowPlayingMenu(externalURL);
                 }
             }
         };
@@ -77,10 +81,20 @@ public class MainArtistActivity extends AppCompatActivity
             mTwoPane = true;
 
         }
-        getSupportActionBar().setTitle(getString(R.string.app_name));
 
-        // TODO: If exposing deep links into your app, handle intents here.
+
+        getSupportActionBar().setTitle(getString(R.string.app_name));
+        registerReceiver(broadcastReceiver, intentFilter);
     }
+
+    private void setNowPlayingMenu(String externalURL) {
+        MediaService.setTrackEventListenerInterface(this);
+        shareMenuItem.setVisible(true);
+        nowPlayingMenuItem.setVisible(true);
+        shareActionProvider.setShareIntent(createPreviewShareIntent());
+
+    }
+
 
     /**
      * Callback method from {@link MainArtistActivityFragment.ArtistCallbacksInterface}
@@ -92,7 +106,7 @@ public class MainArtistActivity extends AppCompatActivity
             // adding or replacing the detail topTracksActivityFragment using a
             // topTracksActivityFragment transaction.
             Bundle arguments = new Bundle();
-            arguments.putParcelable(getString(R.string.artist_id), selectedArtist);
+            arguments.putParcelable(getString(R.string.artist_key), selectedArtist);
             TopTracksActivityFragment topTracksActivityFragment = new TopTracksActivityFragment();
             topTracksActivityFragment.setArguments(arguments);
             getFragmentManager().beginTransaction()
@@ -103,7 +117,7 @@ public class MainArtistActivity extends AppCompatActivity
             // In single-pane mode, simply start the detail activity
             // for the selected item ID.
             Intent topTracksIntent = new Intent(this, TopTracksActivity.class);
-            topTracksIntent.putExtra(getString(R.string.artist_id), selectedArtist);
+            topTracksIntent.putExtra(getString(R.string.artist_key), selectedArtist);
             startActivity(topTracksIntent);
         }
     }
@@ -128,14 +142,19 @@ public class MainArtistActivity extends AppCompatActivity
 
     @Override
     public void onSelectedTrackStarted(String externalURL) {
+        nowPlayingMenuItem.setVisible(true);
+        shareMenuItem.setVisible(true);
         this.externalURL = externalURL;
+        shareActionProvider.setShareIntent(createPreviewShareIntent());
+        MediaService.setTrackEventListenerInterface(this);
     }
 
     @Override
     public void onSelectedTrackCompleted() {
+        nowPlayingMenuItem.setVisible(false);
+        shareMenuItem.setVisible(false);
         mediaPlayerDialog.dismiss();
         MediaService.unsetTrackEventListenerInterface();
-
         this.externalURL = "";
     }
 
@@ -150,13 +169,15 @@ public class MainArtistActivity extends AppCompatActivity
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_media, menu);
-        MenuItem shareMenuItem = menu.findItem(R.id.action_share);
-        MenuItem nowPlayingMenuItem = menu.findItem(R.id.action_now_playing);
+        shareMenuItem = menu.findItem(R.id.action_share);
+        nowPlayingMenuItem = menu.findItem(R.id.action_now_playing);
+        shareActionProvider = (ShareActionProvider)
+                MenuItemCompat.getActionProvider(shareMenuItem);
 
-        ShareActionProvider mShareActionProvider = (ShareActionProvider) MenuItemCompat.getActionProvider((shareMenuItem));
-        if (null != mShareActionProvider) {
-            mShareActionProvider.setShareIntent(createPreviewShareIntent());
+        if (null != shareActionProvider) {
+            shareActionProvider.setShareIntent(createPreviewShareIntent());
         }
+
         if (isServiceRunning()) {
             shareMenuItem.setVisible(false);
             nowPlayingMenuItem.setVisible(false);
@@ -192,7 +213,7 @@ public class MainArtistActivity extends AppCompatActivity
                         if (null != mediaPlayerDialog)
                             mediaPlayerDialog.show(fragmentManager, getString(R.string.fragment_media_player));
                     } else {
-                        Intent mediaPlayerIntent = new Intent(this, MediaPlayer.class);
+                        Intent mediaPlayerIntent = new Intent(this, MediaPlayerActivity.class);
                         startActivity(mediaPlayerIntent);
                     }
                 }
@@ -202,4 +223,23 @@ public class MainArtistActivity extends AppCompatActivity
     }
 
 
+    @Override
+    public void onTrackCompleted() {
+        nowPlayingMenuItem.setVisible(false);
+        shareMenuItem.setVisible(false);
+        if (null != mediaPlayerDialog){
+            mediaPlayerDialog.dismiss();
+        }
+        externalURL = "";
+        shareActionProvider.setShareIntent(createPreviewShareIntent());
+    }
+
+    @Override
+    public void onTrackStarted(String spotifyExternalURL) {
+        nowPlayingMenuItem.setVisible(true);
+        shareMenuItem.setVisible(true);
+        this.externalURL = externalURL;
+        shareActionProvider.setShareIntent(createPreviewShareIntent());
+        MediaService.setTrackEventListenerInterface(this);
+    }
 }

@@ -45,12 +45,6 @@ public class MainArtistActivityFragment extends Fragment {
     private ListView listView;
 
     /**
-     * The serialization (saved instance state) Bundle key representing the
-     * activated item position. Only used on tablets.
-     */
-    private static final String STATE_ACTIVATED_POSITION = "activated_position";
-
-    /**
      * The fragment's current callback object, which is notified of list item
      * clicks.
      */
@@ -97,7 +91,7 @@ public class MainArtistActivityFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (savedInstanceState != null && savedInstanceState.containsKey(getString(R.string
+        if (null != savedInstanceState && savedInstanceState.containsKey(getString(R.string
                 .saved_before_rotation))) {
             listOfArtists = savedInstanceState.getParcelableArrayList(getString(R.string.saved_before_rotation));
         } else {
@@ -167,7 +161,7 @@ public class MainArtistActivityFragment extends Fragment {
         outState.putParcelableArrayList(getString(R.string.saved_before_rotation), (ArrayList<? extends Parcelable>) listOfArtists);
         if (mActivatedPosition != ListView.INVALID_POSITION) {
             // Serialize and persist the activated item position.
-            outState.putInt(STATE_ACTIVATED_POSITION, mActivatedPosition);
+            outState.putInt(getString(R.string.artist_position_key), mActivatedPosition);
         }
     }
 

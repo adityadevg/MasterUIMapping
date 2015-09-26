@@ -1,10 +1,7 @@
 package com.example.adityadev.spotifystreamermasterui;
 
 import android.content.Intent;
-import android.content.SharedPreferences;
-import android.net.Uri;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 import android.support.v4.app.NavUtils;
 import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
@@ -47,25 +44,4 @@ public class MediaPlayerActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    private void openPreferredLocationInMap() {
-        SharedPreferences sharedPrefs =
-                PreferenceManager.getDefaultSharedPreferences(this);
-        String location = sharedPrefs.getString(
-                getString(R.string.country_code_pref_key),
-                getString(R.string.country_code_pref_default));
-
-        // Using the URI scheme for showing a location found on a map.  This super-handy
-        // mapIntent can is detailed in the "Common Intents" page of Android's developer site:
-        // http://developer.android.com/guide/components/intents-common.html#Maps
-        Uri geoLocation = Uri.parse("http://nominatim.openstreetmap.org?").buildUpon()
-                .appendQueryParameter("q", location)
-                .build();
-
-        Intent mapIntent = new Intent(Intent.ACTION_VIEW);
-        mapIntent.setData(geoLocation);
-
-        if (mapIntent.resolveActivity(getPackageManager()) != null) {
-            startActivity(mapIntent);
-        }
-    }
 }

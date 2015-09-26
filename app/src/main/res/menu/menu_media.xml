@@ -12,14 +12,9 @@
         android:id="@+id/action_share"
         android:title="@string/action_share"
         app:actionProviderClass="android.support.v7.widget.ShareActionProvider"
-        app:showAsAction="never" />
-    <item
-        android:id="@+id/toggle_menu"
-        android:title="@string/notification"
-        android:checkable="true"
-        app:actionLayout="@layout/toggle_switch"
         app:showAsAction="ifRoom" />
     <item
         android:id="@+id/action_now_playing"
-        android:title="@string/now_playing" />
+        android:title="@string/now_playing"
+        android:visible="false"/>
 </menu>

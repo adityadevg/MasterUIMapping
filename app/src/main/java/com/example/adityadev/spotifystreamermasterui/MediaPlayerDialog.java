@@ -10,7 +10,6 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.CompoundButton;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.SeekBar;
@@ -85,6 +84,11 @@ public class MediaPlayerDialog extends DialogFragment
             mediaServiceIntent.setAction(getString(R.string.ACTION_NOW_PLAYING));
             getActivity().startService(mediaServiceIntent);
         }
+        if (null != savedInstanceState && savedInstanceState.containsKey(getString(R.string.track_list_key))) {
+            listOfTracks = savedInstanceState.getParcelableArrayList(getString(R.string.track_list_key));
+            currentPosition = savedInstanceState.getInt(getString(R.string.track_number_key));
+            currentTrack = savedInstanceState.getParcelable(getString(R.string.current_track_key));
+        }
     }
 
     @Override
@@ -138,8 +142,8 @@ public class MediaPlayerDialog extends DialogFragment
 
     @Override
     public void onSaveInstanceState(Bundle bundle) {
-        bundle.putParcelableArrayList(getString(R.string.bundle_track_list_key), (ArrayList<? extends Parcelable>) listOfTracks);
-        bundle.putInt(getString(R.string.bundle_track_number_key), currentPosition);
+        bundle.putParcelableArrayList(getString(R.string.track_list_key), (ArrayList<? extends Parcelable>) listOfTracks);
+        bundle.putInt(getString(R.string.track_number_key), currentPosition);
         bundle.putParcelable(getString(R.string.current_track_key), currentTrack);
 
         super.onSaveInstanceState(bundle);
@@ -161,35 +165,27 @@ public class MediaPlayerDialog extends DialogFragment
         elapsedTime_tv = (TextView) rootView.findViewById(R.id.elapsedTimeTextView);
         trackDuration_tv = (TextView) rootView.findViewById(R.id.trackDurationTextView);
 
-        notificationsToggleMenu = (ToggleButton) inflater.inflate(R.layout.toggle_switch, container, false).findViewById(R.id.switchForActionBar);
-        notificationsToggleMenu.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-
-            }
-        });
-
         playPauseTrack_ib.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (isTrackPlaying) {
-                    playPauseTrack_ib.setImageResource(android.R.drawable.ic_media_pause);
+                    playPauseTrack_ib.setImageResource(android.R.drawable.ic_media_play);
                     if (trackPosition == trackDuration && trackPosition > 0) {
                         Intent baseIntent = getActivity().getIntent();
                         listOfTracks = baseIntent.getParcelableArrayListExtra(getString(R.string.track_list_key));
                         currentPosition = baseIntent.getIntExtra(getString(R.string.track_position_key), -1);
                         currentTrack = listOfTracks.get(currentPosition);
                         Intent startServiceIntent = new Intent(getActivity(), MediaService.class);
-                        startServiceIntent.putParcelableArrayListExtra(getString(R.string.bundle_track_list_key), (ArrayList<? extends Parcelable>) listOfTracks);
+                        startServiceIntent.putParcelableArrayListExtra(getString(R.string.track_list_key), (ArrayList<? extends Parcelable>) listOfTracks);
                         startServiceIntent.putExtra(getString(R.string.track_position_key), currentPosition);
                         startServiceIntent.setAction(getString(R.string.ACTION_PLAY));
                         getActivity().startService(startServiceIntent);
                     }
                 } else {
-                    playPauseTrack_ib.setImageResource(android.R.drawable.ic_media_play);
+                    playPauseTrack_ib.setImageResource(android.R.drawable.ic_media_pause);
                 }
                 Intent startServiceIntent = new Intent(getActivity(), MediaService.class);
-                startServiceIntent.setAction(getString(R.string.ACTION_PLAY));
+                startServiceIntent.setAction(getString(R.string.ACTION_PLAY_PAUSE));
                 getActivity().startService(startServiceIntent);
             }
         });
@@ -228,26 +224,28 @@ public class MediaPlayerDialog extends DialogFragment
                 // if the song is finished playing
                 if (trackPosition == trackDuration && trackPosition > 0) {
                     Intent baseIntent = getActivity().getIntent();
-                    listOfTracks = baseIntent.getParcelableArrayListExtra(getString(R.string.bundle_track_list_key));
+                    listOfTracks = baseIntent.getParcelableArrayListExtra(getString(R.string.track_list_key));
                     currentPosition = baseIntent.getIntExtra(getString(R.string.track_position_key), -1);
                     Intent mediaServiceIntent = new Intent(getActivity(), MediaService.class);
                     mediaServiceIntent.putParcelableArrayListExtra(getString(R.string.track_list_key), (ArrayList<? extends Parcelable>) listOfTracks);
                     mediaServiceIntent.putExtra(getString(R.string.track_position_key), currentPosition);
                     mediaServiceIntent.putExtra(getString(R.string.Seekbar_Current_Position), seekBar.getProgress());
                     mediaServiceIntent.setAction(getString(R.string.ACTION_PLAY));
+                    playPauseTrack_ib.setImageResource(android.R.drawable.ic_media_pause);
                     getActivity().startService(mediaServiceIntent);
 
                 } else {
-                    Intent mediServiceIntent = new Intent(getActivity(), MediaService.class);
-                    mediServiceIntent.putExtra(getString(R.string.Seekbar_Current_Position), seekBar.getProgress());
-                    mediServiceIntent.setAction(getString(R.string.ACTION_SEEKBAR_POS_CHANGED));
-                    getActivity().startService(mediServiceIntent);
+                    Intent mediaServiceIntent = new Intent(getActivity(), MediaService.class);
+                    mediaServiceIntent.putExtra(getString(R.string.Seekbar_Current_Position), seekBar.getProgress());
+                    mediaServiceIntent.setAction(getString(R.string.ACTION_SEEKBAR_POS_CHANGED));
+                    playPauseTrack_ib.setImageResource(android.R.drawable.ic_media_pause);
+                    getActivity().startService(mediaServiceIntent);
                 }
             }
         });
 
         if (!isServiceOn) {
-            if (savedInstanceState == null || !savedInstanceState.containsKey(getString(R.string.bundle_track_list_key))) {
+            if (savedInstanceState == null || !savedInstanceState.containsKey(getString(R.string.track_list_key))) {
                 listOfTracks = getArguments().getParcelableArrayList(getString(R.string.track_list_key));
                 currentPosition = getArguments().getInt(getString(R.string.track_position_key), -1);
                 Intent mediaServiceIntent = new Intent(getActivity(), MediaService.class);
@@ -256,8 +254,8 @@ public class MediaPlayerDialog extends DialogFragment
                 mediaServiceIntent.setAction(getString(R.string.ACTION_PLAY));
                 getActivity().startService(mediaServiceIntent);
             } else {
-                listOfTracks = savedInstanceState.getParcelableArrayList(getString(R.string.bundle_track_list_key));
-                currentPosition = savedInstanceState.getInt(getString(R.string.bundle_track_number_key), -1);
+                listOfTracks = savedInstanceState.getParcelableArrayList(getString(R.string.track_list_key));
+                currentPosition = savedInstanceState.getInt(getString(R.string.track_number_key), -1);
                 currentTrack = savedInstanceState.getParcelable(getString(R.string.current_track_key));
 
             }

@@ -3,9 +3,11 @@ package com.example.adityadev.spotifystreamermasterui;
 import android.app.Activity;
 import android.app.Fragment;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Parcelable;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -34,10 +36,10 @@ import retrofit.RetrofitError;
 public class TopTracksActivityFragment extends Fragment {
 
     private TracksArrayAdapter tracksArrayAdapter;
-    private List<Tracks> listOfTracks;
+    private static List<Tracks> listOfTracks;
     private SpotifyApi api;
     private SpotifyService spotifyService;
-    String artistId, artistName;
+    private String artistId, artistName;
 
     /**
      * The fragment's current callback object, which is notified of list item
@@ -53,7 +55,7 @@ public class TopTracksActivityFragment extends Fragment {
 
     @Override
     public void onSaveInstanceState(Bundle bundle) {
-        bundle.putParcelableArrayList(getString(R.string.bundle_track_list_key), (ArrayList<? extends Parcelable>) listOfTracks);
+        bundle.putParcelableArrayList(getString(R.string.track_list_key), (ArrayList<? extends Parcelable>) listOfTracks);
         super.onSaveInstanceState(bundle);
     }
 
@@ -99,13 +101,13 @@ public class TopTracksActivityFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        if (null == savedInstanceState || !savedInstanceState.containsKey(getString(R.string.bundle_track_list_key))) {
+        if (null == savedInstanceState || !savedInstanceState.containsKey(getString(R.string.track_list_key))) {
             // get artist name from previous baseIntent
             Intent baseIntent = getActivity().getIntent();
-            Artist selectedArtist = baseIntent.getParcelableExtra(getString(R.string.artist_id));
+            Artist selectedArtist = baseIntent.getParcelableExtra(getString(R.string.artist_key));
 
-            if (null != getArguments() && getArguments().containsKey(getString(R.string.artist_id))){
-                selectedArtist = getArguments().getParcelable(getString(R.string.artist_id));
+            if (null != getArguments() && getArguments().containsKey(getString(R.string.artist_key))){
+                selectedArtist = getArguments().getParcelable(getString(R.string.artist_key));
             }
 
             if(null != selectedArtist){
@@ -116,7 +118,7 @@ public class TopTracksActivityFragment extends Fragment {
                 new FetchTracksTask().execute(artistId);
             }
         } else {
-            listOfTracks = savedInstanceState.getParcelableArrayList(getString(R.string.bundle_track_list_key));
+            listOfTracks = savedInstanceState.getParcelableArrayList(getString(R.string.track_list_key));
         }
     }
 
@@ -145,7 +147,7 @@ public class TopTracksActivityFragment extends Fragment {
         Map<String, Object> selectCountryOption;
         kaaes.spotify.webapi.android.models.Tracks spotifyListOfTracks;
         private List<Tracks> localListOfTracks = new ArrayList<Tracks>();
-
+        private SharedPreferences sharedPreferences;
 
         /**
          * Override this method to perform a computation on a background thread. The
@@ -167,8 +169,10 @@ public class TopTracksActivityFragment extends Fragment {
                 if (null != params[0]) {
                     if (null != params[0]) {
                         listOfTracks.clear();
+                        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
                         selectCountryOption = new HashMap<String, Object>();
-                        selectCountryOption.put(getString(R.string.country_key), getString(R.string.default_country_name));
+                        selectCountryOption.put(getString(R.string.country_key), sharedPreferences.getString(getString(R.string.country_code_pref_key),getString(R.string.default_country_name)));
+
                         spotifyListOfTracks = spotifyService.getArtistTopTrack(params[0], selectCountryOption);
                         if (null != spotifyListOfTracks.tracks && !spotifyListOfTracks.tracks.isEmpty()) {
                             int size = spotifyListOfTracks.tracks.size() > MAX_NO_OF_TRACKS ? MAX_NO_OF_TRACKS : spotifyListOfTracks.tracks.size();
@@ -209,7 +213,9 @@ public class TopTracksActivityFragment extends Fragment {
             if (null != listOfTracksResult){
                 if (!listOfTracksResult.isEmpty()){
                     tracksArrayAdapter.addAll(listOfTracksResult);
-                } else{
+                } else if (!TopTracksActivityFragment.listOfTracks.isEmpty()){
+                    tracksArrayAdapter.addAll(TopTracksActivityFragment.listOfTracks);
+                } else {
                     Toast.makeText(getActivity(), getString(R.string.no_tracks_found), (Toast.LENGTH_LONG)).show();
                 }
             }

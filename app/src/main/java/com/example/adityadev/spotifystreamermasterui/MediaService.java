@@ -13,6 +13,7 @@ import android.media.MediaPlayer;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
+import android.os.Parcelable;
 import android.os.PowerManager;
 import android.preference.PreferenceManager;
 import android.support.v7.app.NotificationCompat;
@@ -44,7 +45,7 @@ public class MediaService extends Service
     int currentPositionInTrack;
 
     //song list
-    public List<Tracks> listOfTracks;
+    public static List<Tracks> listOfTracks;
     //current position
     private int songPosn;
     public static Tracks currentTrack;
@@ -58,6 +59,8 @@ public class MediaService extends Service
     private SharedPreferences sharedPreferences = null;
     private int isNotifControlVisible = Integer.MIN_VALUE;
     private NotificationCompat.Builder notifCompatBuilder;
+    private PendingIntent pendingListIntent;
+    Intent baseIntent;
 
     public MediaService() {
         listOfTracks = new ArrayList<Tracks>();
@@ -203,7 +206,7 @@ public class MediaService extends Service
     @Override
     public void onCreate() {
         super.onCreate();
-        initSpotifyPlayer();
+        remoteNotificationView = new RemoteViews(getPackageName(), R.layout.notification_layout);
 
         broadcastReceiver = new BroadcastReceiver() {
             @Override
@@ -233,6 +236,7 @@ public class MediaService extends Service
 
     @Override
     public int onStartCommand(Intent baseIntent, int flags, int startId) {
+        this.baseIntent = baseIntent;
 
         Intent notifIntent = new Intent(this, MediaPlayerActivity.class);
         Intent prevIntent = new Intent(this, MediaService.class);
@@ -243,7 +247,7 @@ public class MediaService extends Service
         playIntent.setAction(getString(R.string.ACTION_PLAY_PAUSE));
         nextIntent.setAction(getString(R.string.ACTION_NEXT));
 
-        PendingIntent pendingListIntent = PendingIntent.getActivity(this, 0, notifIntent, 0);
+        pendingListIntent = PendingIntent.getActivity(this, 0, notifIntent, 0);
         PendingIntent pendingPrevListIntent = PendingIntent.getService(this, 0, prevIntent, 0);
         PendingIntent pendingPlayIntent = PendingIntent.getService(this, 0, playIntent, 0);
         PendingIntent pendingNextListIntent = PendingIntent.getService(this, 0, nextIntent, 0);
@@ -251,7 +255,9 @@ public class MediaService extends Service
 
         if (null != baseIntent && baseIntent.getAction().equals(getString(R.string.ACTION_PLAY))) {
 
-            listOfTracks = baseIntent.getParcelableArrayListExtra(getString(R.string.track_list_key));
+            if (null == listOfTracks || listOfTracks.isEmpty()) {
+                listOfTracks = baseIntent.getParcelableArrayListExtra(getString(R.string.track_list_key));
+            }
             position = baseIntent.getIntExtra(getString(R.string.track_position_key), -1);
             currentPositionInTrack = baseIntent.getIntExtra(getString(R.string.elapsed_time), 0);
 
@@ -264,6 +270,7 @@ public class MediaService extends Service
             } else {
                 Log.d(LOG_TAG, "Empty current track");
             }
+            remoteNotificationView.setImageViewResource(R.id.play_btn, android.R.drawable.ic_media_pause);
 
             if (null == spotifyPlayer) {
                 initSpotifyPlayer();
@@ -273,11 +280,10 @@ public class MediaService extends Service
                     }
                     spotifyPlayer.reset();
                     startStreamingMusic(musicUrl);
-                    remoteNotificationView = new RemoteViews(getPackageName(), R.layout.notification_layout);
 
                     SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
 
-                    if (sharedPreferences.getBoolean(getString(R.string.lock_screen_controls),true)){
+                    if (sharedPreferences.getBoolean(getString(R.string.lock_screen_controls), true)) {
                         isNotifControlVisible = Notification.VISIBILITY_PUBLIC;
                     } else {
                         isNotifControlVisible = Notification.VISIBILITY_PRIVATE;
@@ -298,15 +304,15 @@ public class MediaService extends Service
                     remoteNotificationView.setOnClickPendingIntent(R.id.next_btn, pendingNextListIntent);
                 }
             } else {
-                if (null != musicUrl && !musicUrl.isEmpty()){
-                    if(spotifyPlayer.isPlaying()){
+                if (null != musicUrl && !musicUrl.isEmpty()) {
+                    if (spotifyPlayer.isPlaying()) {
                         spotifyPlayer.stop();
                     }
                     spotifyPlayer.reset();
                     try {
                         spotifyPlayer.setDataSource(musicUrl);
                     } catch (IOException ie) {
-                        Log.i(LOG_TAG,ie.getMessage());
+                        Log.i(LOG_TAG, ie.getMessage());
                     }
                     startStreamingMusic(musicUrl);
                 }
@@ -315,7 +321,8 @@ public class MediaService extends Service
             if (spotifyPlayer.isPlaying()) {
                 spotifyPlayer.stop();
             }
-            remoteNotificationView.setImageViewResource(R.id.play_btn, android.R.drawable.ic_media_play);
+            remoteNotificationView.setImageViewResource(R.id.play_btn, android.R.drawable.ic_media_pause);
+
             notifManager.notify(NOTIFICATION_ID, notif);
             if (position > 0 && null != listOfTracks && listOfTracks.size() > 0) {
                 position--;
@@ -329,15 +336,18 @@ public class MediaService extends Service
                 }
             }
         } else if (null != baseIntent && baseIntent.getAction().equals(getString(R.string.ACTION_NEXT))) {
+            if (null == spotifyPlayer) {
+                initSpotifyPlayer();
+            }
             if (spotifyPlayer.isPlaying()) {
                 spotifyPlayer.stop();
             }
-            remoteNotificationView.setImageViewResource(R.id.play_btn, android.R.drawable.ic_media_play);
+            remoteNotificationView.setImageViewResource(R.id.play_btn, android.R.drawable.ic_media_pause);
             notifManager.notify(NOTIFICATION_ID, notif);
             if (null != listOfTracks && listOfTracks.size() > 0 && position < listOfTracks.size() - 1) {
                 position++;
                 currentTrack = listOfTracks.get(position);
-                if(null != musicUrl){
+                if (null != musicUrl) {
                     musicUrl = currentTrack.getPreviewUrl();
                     startStreamingMusic(musicUrl);
                 } else {
@@ -350,6 +360,9 @@ public class MediaService extends Service
                 }
             }
         } else if (null != baseIntent && baseIntent.getAction().equals(getString(R.string.ACTION_PLAY_PAUSE))) {
+            if (null == spotifyPlayer) {
+                initSpotifyPlayer();
+            }
             if (spotifyPlayer.isPlaying()) {
                 spotifyPlayer.pause();
                 remoteNotificationView.setImageViewResource(R.id.play_btn, android.R.drawable.ic_media_play);
@@ -397,12 +410,12 @@ public class MediaService extends Service
 
     private void startStreamingMusic(String musicUrl) {
         if (null != spotifyPlayer) {
-            if (spotifyPlayer.isPlaying()){
+            if (spotifyPlayer.isPlaying()) {
                 spotifyPlayer.stop();
             }
             spotifyPlayer.reset();
             try {
-                if(!musicUrl.isEmpty()){
+                if (!musicUrl.isEmpty()) {
                     spotifyPlayer.setDataSource(musicUrl);
                 }
                 spotifyPlayer.prepareAsync(); // prepare async to not block main thread
@@ -421,7 +434,8 @@ public class MediaService extends Service
 
     @Override
     public void onCompletion(MediaPlayer spotifyPlayer) {
-        mTrackEventListenerObj.onTrackCompleted();
+        if (null != mTrackEventListenerObj)
+            mTrackEventListenerObj.onTrackCompleted();
         if (null != mediaPlayerControlInterfaceObj)
             mediaPlayerControlInterfaceObj.onTrackCompleted();
         if (null != this.spotifyPlayer)
@@ -442,6 +456,7 @@ public class MediaService extends Service
         Intent broadcastIntent = new Intent();
         broadcastIntent.setAction(getString(R.string.ACTION_NOW_PLAYING));
         broadcastIntent.putExtra(getString(R.string.spotify_external_url), currentTrack.getExternalSpotifyLink());
+        broadcastIntent.putParcelableArrayListExtra(getString(R.string.track_list_key), (ArrayList<? extends Parcelable>) listOfTracks);
         sendBroadcast(broadcastIntent);
         if (null != mediaPlayerControlInterfaceObj) {
             mediaPlayerControlInterfaceObj.setTrackDuration(spotifyPlayer.getDuration());
@@ -453,18 +468,29 @@ public class MediaService extends Service
             mediaPlayerControlInterfaceObj.setTrackNo(listOfTracks.indexOf(currentTrack));
             mediaPlayerControlInterfaceObj.isSpotifyPlayerPaused(false);
         }
-
         remoteNotificationView.setImageViewResource(R.id.play_btn, android.R.drawable.ic_media_pause);
+
+
         remoteNotificationView.setTextViewText(R.id.trackName_tv, currentTrack.getTrackName());
         Handler notifHandler = new Handler(Looper.getMainLooper());
+        if (null == notif) {
+            NotificationCompat.Builder builder = new NotificationCompat.Builder(this);
+            builder.setSmallIcon(R.drawable.notification_template_icon_bg)
+                    .setContentIntent(pendingListIntent)
+                    .setContent(remoteNotificationView)
+                    .setOngoing(true)
+                    .setVisibility(isNotifControlVisible);
+            notif = builder.build();
+        }
         notifHandler.post(new Runnable() {
             @Override
             public void run() {
-                if (!currentTrack.getAlbumImageURL().isEmpty())
+                if (!currentTrack.getAlbumImageURL().isEmpty()) {
                     Picasso
                             .with(MediaService.this)
                             .load(currentTrack.getAlbumImageURL())
                             .into(remoteNotificationView, R.id.album_thumbnail_imageview, NOTIFICATION_ID, notif);
+                }
             }
         });
     }
